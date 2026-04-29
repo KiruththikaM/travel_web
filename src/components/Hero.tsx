@@ -60,9 +60,8 @@ function Hero() {
           <img
             key={s.id}
             src={s.image}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
           />
         ))}
         <div className="absolute inset-0 bg-black/10 z-10" />
@@ -81,11 +80,11 @@ function Hero() {
           </svg>
         </div>
 
-        <div className="absolute right-[-2rem] top-1/2 -translate-y-1/2 text-[15rem] font-bold text-white opacity-10 select-none pointer-events-none">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[15rem] font-bold text-white opacity-10 select-none pointer-events-none">
           {slide.num}
         </div>
 
-        <div className="relative z-10 w-full max-w-lg">
+        <div className="relative z-10 w-full max-w-lg pr-28 lg:pr-36">
           <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-bold leading-tight mb-6">
             <div className="text-[#fb5b52]">{slide.title1}</div>
             <div className="text-transparent" style={{ WebkitTextStroke: "2px #fb5b52" }}>
@@ -98,14 +97,14 @@ function Hero() {
           </p>
 
           <div className="flex gap-4">
-            <button 
+            <button
               onClick={() => navigate('/destinations')}
               className="bg-[#fb5b52] text-white px-8 py-3 font-semibold hover:bg-red-600 transition"
             >
               View Adventure
             </button>
 
-            <button 
+            <button
               onClick={() => navigate('/destinations')}
               className="border border-[#fb5b52] text-[#fb5b52] px-8 py-3 font-semibold hover:bg-[#fb5b52] hover:text-white transition"
             >
@@ -125,25 +124,25 @@ function Hero() {
 
       </div>
 
-    
+
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-30 transform translate-y-[1px] pointer-events-none">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="relative block w-full h-[60px] md:h-[120px]" preserveAspectRatio="none">
-          <path 
-            fill={theme.palette.mode === 'dark' ? '#0f172a' : '#fff1f0'} 
+          <path
+            fill={theme.palette.mode === 'dark' ? '#0f172a' : '#fff1f0'}
             d="M0,160L48,170.7C96,181,192,203,288,197.3C384,192,480,160,576,165.3C672,171,768,213,864,213.3C960,213,1056,171,1152,149.3C1248,128,1344,128,1392,128L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
           ></path>
         </svg>
       </div>
 
-    
-      <button 
+
+      <button
         onClick={() => window.scrollBy({ top: window.innerHeight * 0.75, behavior: 'smooth' })}
         className="absolute -bottom-6 md:-bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center justify-center text-white cursor-pointer group"
         aria-label="Scroll down"
       >
         <div className="bg-[#fb5b52] shadow-xl shadow-[#fb5b52]/40 p-3 md:p-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-110">
           <svg className="w-7 h-7 md:w-8 md:h-8 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
         </div>
       </button>
