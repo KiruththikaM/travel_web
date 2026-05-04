@@ -27,50 +27,42 @@ function Login({ open, handleClose }: { open: boolean, handleClose: () => void }
 
   const handleSubmit = () => {
     setError("");
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
 
-    if (isLogin) {
-      const user = users.find((u: User) => u.email === email && u.password === password)
-      if (user) {
-        dispatch(login(user));
-        window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Login successful!", severity: "success" } }));
+    import('../data/db.json').then((db) => {
+      const adminCreds = db.adminCredentials;
+      if (email === adminCreds.email && password === adminCreds.password) {
+        dispatch(login({ name: adminCreds.name, email: adminCreds.email, role: 'admin' }));
+        window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Welcome, Admin!", severity: "success" } }));
         handleClose();
-      } else {
-        setError("Invalid email or password. Please register if you don't have an account.");
-      }
-    } else {
-      if (!name || !email || !password) {
-        setError("All fields are required.");
         return;
       }
-      const userExists = users.some((u: User) => u.email === email)
-      if (userExists) {
-        setError("User already exists with this email. Please login.");
-      } else {
-        users.push({ name, email, password });
-        localStorage.setItem("users", JSON.stringify(users));
-        
-        emailjs.send(
-          "service_zlxwif9",
-          "template_xl9ewvo",
-          {
-            title: "Welcome Request",
-            user_name: name,
-            user_email: email,
-            name: "VisitSriLanka System",
-            email: email
-          },
-          "UZdscZBUE52_q_Tjs"
-        ).then(() => {
-          console.log("Welcome email sent successfully");
-        }).catch((err) => {
-          console.error("Failed to send welcome email:", err);
-        });
 
-        window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Registration successful! A welcome email has been sent.", severity: "success" } }));
-        setIsLogin(true);
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      if (isLogin) {
+        const user = users.find((u: User) => u.email === email && u.password === password);
+        if (user) {
+          dispatch(login({ ...user, role: 'user' }));
+          window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Login successful!", severity: "success" } }));
+          handleClose();
+        } else {
+          setError("Invalid email or password. Please register if you don't have an account.");
+        }
+      } else {
+        if (!name || !email || !password) { setError("All fields are required."); return; }
+        const userExists = users.some((u: User) => u.email === email);
+        if (userExists) {
+          setError("User already exists with this email. Please login.");
+        } else {
+          users.push({ name, email, password, role: 'user' });
+          localStorage.setItem("users", JSON.stringify(users));
+          emailjs.send("service_zlxwif9", "template_xl9ewvo", { title: "Welcome Request", user_name: name, user_email: email, name: "VisitSriLanka System", email }, "UZdscZBUE52_q_Tjs")
+            .then(() => console.log("Welcome email sent"))
+            .catch((err) => console.error("Failed to send welcome email:", err));
+          window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Registration successful! A welcome email has been sent.", severity: "success" } }));
+          setIsLogin(true);
+        }
       }
-    }
+    });
   };
 
   const handleResetAndClose = () => {

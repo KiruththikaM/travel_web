@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store/Store'
 import { logout } from '../store/slices/authSlice'
-import { Link, useLocation } from 'react-router-dom'
-import { AppBar, Toolbar, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Box, useScrollTrigger, Snackbar, Alert } from '@mui/material'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AppBar, Toolbar, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Box, useScrollTrigger, Snackbar, Alert, Tooltip } from '@mui/material'
 import Button from './Button'
 import MenuIcon from '@mui/icons-material/Menu'
 import CloseIcon from '@mui/icons-material/Close'
@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import Login from "../pages/Login"
 import { useThemeContext } from '../context/ThemeContext'
 import type { NavLink, ToastSeverity, ToastDetail } from '../types'
@@ -26,12 +27,15 @@ const links: NavLink[] = [
 function Navbar() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 10 })
   const [loginOpen, setLoginOpen] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastSeverity, setToastSeverity] = useState<ToastSeverity>("success");
   const user = useSelector((state: RootState) => state.auth.user);
+  const isAdmin = user?.role === 'admin';
+  const isAdminRoute = pathname.startsWith('/admin');
   const dispatch = useDispatch();
   const { mode, toggleTheme } = useThemeContext()
 
@@ -113,6 +117,35 @@ function Navbar() {
                 <Box component="span" sx={{ fontSize: '14px', fontWeight: 600, display: { xs: 'none', sm: 'inline' }, color: 'text.primary' }}>
                   Hi, {user.name}
                 </Box>
+                {isAdmin && (
+                  <Tooltip title={isAdminRoute ? 'Back to Website' : 'Admin Dashboard'}>
+                    <Box
+                      onClick={() => navigate(isAdminRoute ? '/' : '/admin')}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.8,
+                        px: 1.5,
+                        py: 0.6,
+                        borderRadius: '20px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        border: '1.5px solid',
+                        transition: 'all 0.25s',
+                        borderColor: isAdminRoute ? '#10b981' : '#6366f1',
+                        color: isAdminRoute ? '#10b981' : '#6366f1',
+                        bgcolor: isAdminRoute ? 'rgba(16,185,129,0.08)' : 'rgba(99,102,241,0.08)',
+                        '&:hover': {
+                          bgcolor: isAdminRoute ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)',
+                        }
+                      }}
+                    >
+                      <AdminPanelSettingsIcon sx={{ fontSize: 16 }} />
+                      {isAdminRoute ? 'Website' : 'Dashboard'}
+                    </Box>
+                  </Tooltip>
+                )}
                 <Button variant="outlined" color="error" size="small" pill onClick={handleLogout}>
                   Logout
                 </Button>

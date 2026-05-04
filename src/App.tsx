@@ -12,6 +12,7 @@ import ManageDestinations from './admin/pages/ManageDestinations'
 import ManageBookings from './admin/pages/ManageBookings'
 import ManageUsers from './admin/pages/ManageUsers'
 import AdminSettings from './admin/pages/AdminSettings'
+import ProtectedRoute from './components/ProtectedRoute'
 
 const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -41,11 +42,11 @@ function App() {
           <Route path="/book/:id" element={<Book />} />
         
           
-          <Route path="/admin" element={<DashboardOverview />} />
-          <Route path="/admin/destinations" element={<ManageDestinations />} />
-          <Route path="/admin/bookings" element={<ManageBookings />} />
-          <Route path="/admin/users" element={<ManageUsers />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
+          <Route path="/admin/destinations" element={<ProtectedRoute><ManageDestinations /></ProtectedRoute>} />
+          <Route path="/admin/bookings" element={<ProtectedRoute><ManageBookings /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><ManageUsers /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
         </Routes>
       </LayoutWrapper>
     </BrowserRouter>

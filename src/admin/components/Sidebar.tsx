@@ -1,4 +1,7 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../store/slices/authSlice';
+import type { AppDispatch } from '../../store/Store';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PublicIcon from '@mui/icons-material/Public';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -8,6 +11,13 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 const Sidebar = () => {
   const location = useLocation();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+  };
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
@@ -54,7 +64,7 @@ const Sidebar = () => {
       </nav>
 
       <div className="mt-auto pt-6">
-        <button className="flex items-center justify-center gap-3 w-full p-3.5 bg-white/5 rounded-2xl text-white/70 border border-white/5 transition-all hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 text-sm font-semibold">
+        <button onClick={handleLogout} className="flex items-center justify-center gap-3 w-full p-3.5 bg-white/5 rounded-2xl text-white/70 border border-white/5 transition-all hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 text-sm font-semibold">
           <ExitToAppIcon className="text-xl" />
           Logout
         </button>
