@@ -14,6 +14,7 @@ export const destinations: Destination[] = [
     image: 'https://t3.ftcdn.net/jpg/04/72/15/84/360_F_472158460_EEZxYRnfbPVQHR1NGjkvgZKfiSsWnCri.jpg',
     category: 'Heritage',
     rating: 4.9,
+    price: 120,
     gallery: [
       'https://images.unsplash.com/photo-1601823984263-2f75fc56cde2?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1560703650-ef3e0f254ae0?w=800&auto=format&fit=crop',
@@ -29,6 +30,7 @@ export const destinations: Destination[] = [
     image: 'https://suhadabliss.com/wp-content/uploads/2025/06/Nine-Arch.jpg',
     category: 'Nature',
     rating: 4.8,
+    price: 95,
     gallery: [
       'https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1546961342-ea5f62d5a27b?w=800&auto=format&fit=crop',
@@ -44,6 +46,7 @@ export const destinations: Destination[] = [
     image: 'https://images.squarespace-cdn.com/content/v1/596b2969d2b85786e6892853/1531738844396-H040L4I7S80ZGQV196K4/DJI_0780.jpg?format=1500w',
     category: 'Beach',
     rating: 4.7,
+    price: 80,
     gallery: [
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop',
@@ -59,6 +62,7 @@ export const destinations: Destination[] = [
     image: 'https://www.srilankainstyle.com/storage/app/media/uploaded-files/7-reasons-to-visit-kandy-in-sri-lanka-slider-1.jpg',
     category: 'Culture',
     rating: 4.8,
+    price: 110,
     gallery: [
       'https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1545389336-cf090694435e?w=800&auto=format&fit=crop',
@@ -74,6 +78,7 @@ export const destinations: Destination[] = [
     image: 'https://do6raq9h04ex.cloudfront.net/sites/8/2025/08/Why-Galle-Fort-Is-a-Must-Visit-Day-Trip-from-Unawatuna-1050x700-1.jpg',
     category: 'Heritage',
     rating: 4.7,
+    price: 75,
     gallery: [
       'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&auto=format&fit=crop',
@@ -89,6 +94,7 @@ export const destinations: Destination[] = [
     image: 'https://www.andbeyond.com/wp-content/uploads/sites/5/sri-lanka-leopard-asian.jpg',
     category: 'Wildlife',
     rating: 4.9,
+    price: 150,
     gallery: [
       'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800&auto=format&fit=crop',

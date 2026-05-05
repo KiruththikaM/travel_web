@@ -6,6 +6,7 @@ export interface Destination {
   image: string
   category: string
   rating: number
+  price?: number
   gallery?: string[]
 }
 
