@@ -52,7 +52,7 @@ function DestinationsPage() {
 
   return (
     <Box sx={{
-      pt: '80px', minHeight: '100vh',
+      pt: '5px', minHeight: '100vh',
       background: (theme: Theme) =>
         theme.palette.mode === 'dark'
           ? 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'

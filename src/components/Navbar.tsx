@@ -12,6 +12,8 @@ import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import LuggageIcon from '@mui/icons-material/Luggage'
+import { Badge } from '@mui/material'
 import Login from "../pages/Login"
 import { useThemeContext } from '../context/ThemeContext'
 import type { NavLink, ToastSeverity, ToastDetail } from '../types'
@@ -39,6 +41,19 @@ function Navbar() {
   const dispatch = useDispatch();
   const { mode, toggleTheme } = useThemeContext()
 
+  const getBookingCount = () => user
+    ? (JSON.parse(localStorage.getItem(`bookings_${user.email}`) || '[]') as { status: string }[])
+        .filter(b => b.status !== 'Cancelled').length
+    : 0
+
+  const [bookingCount, setBookingCount] = useState(getBookingCount)
+
+  useEffect(() => {
+    const handleUpdate = () => setBookingCount(getBookingCount())
+    window.addEventListener('bookingUpdated', handleUpdate)
+    return () => window.removeEventListener('bookingUpdated', handleUpdate)
+  }, [user])
+
   useEffect(() => {
     const handleOpenLogin = () => setLoginOpen(true);
     const handleShowToast = (e: CustomEvent<ToastDetail>) => {
@@ -57,6 +72,7 @@ function Navbar() {
 
   const handleLogout = () => {
     dispatch(logout());
+    navigate('/');
     window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Logged out successfully", severity: "success" } }));
   };
 
@@ -114,7 +130,9 @@ function Navbar() {
 
             {user ? (
               <Box display="flex" alignItems="center" gap={1} ml={2}>
-                <Box component="span" sx={{ fontSize: '14px', fontWeight: 600, display: { xs: 'none', sm: 'inline' }, color: 'text.primary' }}>
+                <Box component="span"
+                  onClick={() => navigate('/profile')}
+                  sx={{ fontSize: '14px', fontWeight: 600, display: { xs: 'none', sm: 'inline' }, color: 'text.primary', cursor: 'pointer', '&:hover': { color: '#fb5b52' }, transition: 'color 0.2s' }}>
                   Hi, {user.name}
                 </Box>
                 {isAdmin && (
@@ -146,6 +164,13 @@ function Navbar() {
                     </Box>
                   </Tooltip>
                 )}
+                <Tooltip title="My Bookings">
+                  <IconButton id="nav-bookings-icon" onClick={() => navigate('/profile')} sx={{ color: 'text.primary' }}>
+                    <Badge badgeContent={bookingCount} color="error" max={9}>
+                      <LuggageIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
                 <Button variant="outlined" color="error" size="small" pill onClick={handleLogout}>
                   Logout
                 </Button>

@@ -7,6 +7,7 @@ import DestinationDetail from './pages/DestinationDetail'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Book from './pages/Book'
+import Profile from './pages/Profile'
 import DashboardOverview from './admin/pages/DashboardOverview'
 import ManageDestinations from './admin/pages/ManageDestinations'
 import ManageBookings from './admin/pages/ManageBookings'
@@ -40,6 +41,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/book/:id" element={<Book />} />
+          <Route path="/profile" element={<Profile />} />
         
           
           <Route path="/admin" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />

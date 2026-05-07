@@ -31,3 +31,17 @@ export interface ToastDetail {
   message: string
   severity?: ToastSeverity
 }
+
+export interface UserBooking {
+  id: string
+  destinationId: string
+  destinationName: string
+  destinationImage: string
+  destinationCategory: string
+  checkIn: string
+  checkOut: string
+  guests: number
+  total: number
+  status: 'Pending' | 'Confirmed' | 'Cancelled'
+  bookedAt: string
+}

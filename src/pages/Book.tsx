@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate} from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Box, Typography, TextField, Grid, Divider, Alert, Paper, Container } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
+import LuggageIcon from '@mui/icons-material/Luggage';
 import { destinations } from '../components/Destinations';
-import type { Destination } from '../types';
+import type { Destination, UserBooking } from '../types';
+import type { RootState } from '../store/Store';
 import Button from '../components/Button';
 
 function Book() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.auth.user);
   const dest: Destination | undefined = destinations.find(d => d.id === id);
   const [submitted, setSubmitted] = useState(false);
+  const [flyPos, setFlyPos] = useState<{ x: number; y: number; tx: number; ty: number } | null>(null);
+  const submitBtnRef = useRef<HTMLDivElement>(null);
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', checkIn: '', checkOut: '', guests: '2', notes: '' });
+
+  useEffect(() => {
+    if (!flyPos) return;
+    const flyEl = document.getElementById('fly-icon');
+    if (flyEl) {
+      flyEl.style.setProperty('--fly-x', `translateX(${flyPos.tx}px)`);
+      flyEl.style.setProperty('--fly-y', `translateY(${flyPos.ty}px)`);
+    }
+  }, [flyPos]);
 
   if (!dest) return (
     <Box sx={{ pt: 16, textAlign: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -24,7 +40,46 @@ function Book() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (user) {
+      const booking: UserBooking = {
+        id: `BK-${Date.now()}`,
+        destinationId: dest.id,
+        destinationName: dest.name,
+        destinationImage: dest.image,
+        destinationCategory: dest.category,
+        checkIn: form.checkIn,
+        checkOut: form.checkOut,
+        guests: Number(form.guests),
+        total: 1250,
+        status: 'Pending',
+        bookedAt: new Date().toISOString(),
+      };
+      const key = `bookings_${user.email}`;
+      const existing: UserBooking[] = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.unshift(booking);
+      localStorage.setItem(key, JSON.stringify(existing));
+    }
+
+  
+    const navIcon = document.getElementById('nav-bookings-icon');
+    const btnEl = submitBtnRef.current;
+    if (navIcon && btnEl) {
+      const btnRect = btnEl.getBoundingClientRect();
+      const navRect = navIcon.getBoundingClientRect();
+      const startX = btnRect.left + btnRect.width / 2;
+      const startY = btnRect.top + btnRect.height / 2;
+      const endX = navRect.left + navRect.width / 2;
+      const endY = navRect.top + navRect.height / 2;
+      setFlyPos({ x: startX - 20, y: startY - 20, tx: endX - startX, ty: endY - startY });
+      setTimeout(() => {
+        setFlyPos(null);
+        setSubmitted(true);
+        window.dispatchEvent(new CustomEvent('bookingUpdated'));
+      }, 850);
+    } else {
+      setSubmitted(true);
+      window.dispatchEvent(new CustomEvent('bookingUpdated'));
+    }
   };
 
   if (submitted) {
@@ -57,6 +112,31 @@ function Book() {
 
   return (
     <Box sx={{ minHeight: '100vh', position: 'relative', pt: '100px', pb: 12, overflow: 'hidden' }}>
+
+      
+      {flyPos && (
+        <Box
+          id="fly-icon"
+          className="fly-animation"
+          sx={{
+            position: 'fixed',
+            left: flyPos.x,
+            top: flyPos.y,
+            width: 40,
+            height: 40,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: '#fb5b52',
+            borderRadius: '50%',
+            boxShadow: '0 4px 20px rgba(251,91,82,0.6)',
+          }}
+        >
+          <LuggageIcon sx={{ color: '#fff', fontSize: 22 }} />
+        </Box>
+      )}
       
       
       <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
@@ -110,16 +190,16 @@ function Book() {
                 <Typography variant="h5" fontWeight={800} mb={3}>Personal Details</Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="First Name" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="First Name" variant="outlined" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="Last Name" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="Last Name" variant="outlined" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="Email Address" type="email" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="Email Address" type="email" variant="outlined" value={form.email} onChange={e => setForm({...form, email: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="Phone Number" type="tel" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="Phone Number" type="tel" variant="outlined" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                 </Grid>
               </Box>
@@ -131,13 +211,13 @@ function Book() {
                 <Typography variant="h5" fontWeight={800} mb={3}>Trip Dates & Guests</Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={4}>
-                    <TextField required fullWidth label="Check-in Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="Check-in Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined" value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField required fullWidth label="Check-out Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="Check-out Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined" value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField required fullWidth label="Guests" type="number" InputProps={{ inputProps: { min: 1 } }} defaultValue={2} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField required fullWidth label="Guests" type="number" InputProps={{ inputProps: { min: 1 } }} value={form.guests} onChange={e => setForm({...form, guests: e.target.value})} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
                   </Grid>
                 </Grid>
               </Box>
@@ -151,7 +231,9 @@ function Book() {
                   fullWidth 
                   label="Special Requirements (Optional)" 
                   multiline rows={4} variant="outlined" 
-                  placeholder="Tell us about special occasions, dietary restrictions, etc." 
+                  placeholder="Tell us about special occasions, dietary restrictions, etc."
+                  value={form.notes}
+                  onChange={e => setForm({...form, notes: e.target.value})}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                 />
               </Box>
@@ -172,6 +254,7 @@ function Book() {
                 </Typography>
               </Alert>
 
+              <div ref={submitBtnRef}>
               <Button
                 type="submit"
                 variant="contained"
@@ -185,6 +268,7 @@ function Book() {
               >
                 Request Booking
               </Button>
+              </div>
 
             </form>
             </Paper>
