@@ -8,6 +8,10 @@ import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import TourIcon from '@mui/icons-material/Tour';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import ChatIcon from '@mui/icons-material/Chat';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -19,54 +23,74 @@ const Sidebar = () => {
     navigate('/');
   };
 
-  const menuItems = [
-    { name: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
-    { name: 'Destinations', path: '/admin/destinations', icon: <PublicIcon /> },
-    { name: 'Bookings', path: '/admin/bookings', icon: <ConfirmationNumberIcon /> },
-    { name: 'Users', path: '/admin/users', icon: <PeopleIcon /> },
-    { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon /> },
+  const mainItems = [
+    { name: 'Dashboard', path: '/admin', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
+    { name: 'My Tour', path: '/admin/destinations', icon: <TourIcon sx={{ fontSize: 20 }} /> },
+    { name: 'Bookings', path: '/admin/bookings', icon: <ConfirmationNumberIcon sx={{ fontSize: 20 }} /> },
+    { name: 'Calendar', path: '/admin/calendar', icon: <CalendarMonthIcon sx={{ fontSize: 20 }} /> },
+    { name: 'Messages', path: '/admin/messages', icon: <ChatIcon sx={{ fontSize: 20 }} /> },
+    { name: 'Users', path: '/admin/users', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
+    { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon sx={{ fontSize: 20 }} /> },
   ];
 
-  const primaryColor = '#6366f1';
+  const insightItems = [
+    { name: 'Analytics', path: '/admin/analytics', icon: <AnalyticsIcon sx={{ fontSize: 20 }} /> },
+    { name: 'Top Tours', path: '/admin/top-tours', icon: <PublicIcon sx={{ fontSize: 20 }} /> },
+  ];
+
+  const NavItem = ({ item }: { item: typeof mainItems[0] }) => {
+    const isActive = location.pathname === item.path;
+    return (
+      <Link
+        to={item.path}
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group text-sm font-semibold ${
+          isActive
+            ? 'bg-red-500 text-white shadow-md shadow-red-200'
+            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+        }`}
+      >
+        <span className={`flex items-center ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`}>
+          {item.icon}
+        </span>
+        {item.name}
+      </Link>
+    );
+  };
+
   return (
-    <div className="w-full h-full bg-slate-950/95 backdrop-blur-xl text-white border-r border-white/10 p-8 flex flex-col">
-      <div className="flex items-center gap-3 mb-10 pl-2">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${primaryColor}, #818cf8)` }}>
-          <span className="text-lg">✈️</span>
+    <div className="w-full h-full bg-white border-r border-slate-200 flex flex-col" style={{ fontFamily: 'inherit' }}>
+  
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-100">
+        <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
+          <span className="text-white text-base">✈️</span>
         </div>
-        <h1 className="text-xl font-extrabold text-white m-0 tracking-tight">
-          Tour<span className="text-indigo-500">X</span>Pro
+        <h1 className="text-lg font-extrabold text-slate-900 m-0 tracking-tight">
+          Tour<span className="text-red-500">X</span>Pro
         </h1>
       </div>
 
-      <nav className="flex-1 space-y-1">
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
-                isActive 
-                  ? 'bg-indigo-600/15 text-white border border-indigo-500/20 shadow-lg shadow-indigo-500/10' 
-                  : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
-              }`}
-            >
-              <span className={`flex items-center text-xl transition-colors ${isActive ? 'text-white' : 'text-white/30 group-hover:text-white/70'}`}>
-                {item.icon}
-              </span>
-              <span className="font-semibold text-sm tracking-wide">
-                {item.name}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Main</p>
+        <nav className="space-y-0.5 mb-6">
+          {mainItems.map(item => <NavItem key={item.name} item={item} />)}
+        </nav>
 
-      <div className="mt-auto pt-6">
-        <button onClick={handleLogout} className="flex items-center justify-center gap-3 w-full p-3.5 bg-white/5 rounded-2xl text-white/70 border border-white/5 transition-all hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 text-sm font-semibold">
-          <ExitToAppIcon className="text-xl" />
-          Logout
+      
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Insights</p>
+        <nav className="space-y-0.5 mb-6">
+          {insightItems.map(item => <NavItem key={item.name} item={item} />)}
+        </nav>
+      </div>
+
+     
+      <div className="px-4 py-4 border-t border-slate-100">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-semibold"
+        >
+          <ExitToAppIcon sx={{ fontSize: 20 }} />
+          Back to Home
         </button>
       </div>
     </div>

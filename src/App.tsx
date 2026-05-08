@@ -13,6 +13,8 @@ import ManageDestinations from './admin/pages/ManageDestinations'
 import ManageBookings from './admin/pages/ManageBookings'
 import ManageUsers from './admin/pages/ManageUsers'
 import AdminSettings from './admin/pages/AdminSettings'
+import AdminCalendar from './admin/pages/AdminCalendar'
+import AdminMessages from './admin/pages/AdminMessages'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -49,6 +51,8 @@ function App() {
           <Route path="/admin/bookings" element={<ProtectedRoute><ManageBookings /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><ManageUsers /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+          <Route path="/admin/calendar" element={<ProtectedRoute><AdminCalendar /></ProtectedRoute>} />
+          <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
         </Routes>
       </LayoutWrapper>
     </BrowserRouter>

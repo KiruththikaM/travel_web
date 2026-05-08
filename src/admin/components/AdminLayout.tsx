@@ -11,7 +11,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-slate-50 relative overflow-x-hidden">
+    <div className="flex min-h-screen bg-gray-50 relative overflow-x-hidden">
 
       <div className="hidden lg:block w-[260px] fixed h-full z-50">
         <Sidebar />
@@ -22,7 +22,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
-        <div className="relative w-[280px] h-full bg-slate-900 shadow-2xl">
+        <div className="relative w-[280px] h-full bg-white shadow-2xl">
           <div className="absolute top-4 right-4 text-white cursor-pointer" onClick={() => setIsSidebarOpen(false)}>
             <CloseIcon />
           </div>
@@ -35,7 +35,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-40">
           <button
-            className="p-2 -ml-2 text-slate-600 hover:text-indigo-600 transition"
+            className="p-2 -ml-2 text-slate-600 hover:text-red-500 transition"
             onClick={() => setIsSidebarOpen(true)}
           >
             <MenuIcon />

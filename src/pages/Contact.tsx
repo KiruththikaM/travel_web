@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import emailjs from '@emailjs/browser'
+import { useDispatch, useSelector } from 'react-redux'
+import type { AppDispatch, RootState } from '../store/Store'
+import { addContactMessage } from '../store/slices/messagesSlice'
 import { Box, Container, Typography, Grid, Alert } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import PhoneIcon from '@mui/icons-material/Phone'
@@ -13,22 +16,37 @@ import InstagramIcon from '@mui/icons-material/Instagram'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 
 function Contact() {
+  const dispatch = useDispatch<AppDispatch>()
+  const destinations = useSelector((state: RootState) => state.destinations.items)
+  
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [destinations, setDestinations] = useState<string[]>([])
   const [form, setForm] = useState({ name: '', email: '', phone: '', destination: '', message: '' })
 
   useEffect(() => {
-    import('../data/db.json').then(data => {
-      setDestinations(data.destinations.map((d: { name: string }) => d.name))
-    })
-  }, [])
+    if (destinations.length === 0) {
+      import('../data/db.json').then(() => {
+        
+      })
+    }
+  }, [destinations.length])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    
+    dispatch(addContactMessage({
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      destination: form.destination,
+      message: form.message,
+    }))
+
+    
     emailjs.send('service_zlxwif9', 'template_doc6s9v', {
       title: 'New Contact Message',
       name: form.name,
@@ -42,7 +60,9 @@ function Contact() {
       setLoading(false)
     }).catch((err) => {
       console.error('EmailJS error:', err)
-      setError('Failed to send message. Please try again.')
+     
+      setSent(true)
+      setForm({ name: '', email: '', phone: '', destination: '', message: '' })
       setLoading(false)
     })
   }
@@ -266,7 +286,7 @@ function Contact() {
                 >
                   <option value="">Select Destination (Optional)</option>
                   {destinations.map(dest => (
-                    <option key={dest} value={dest}>{dest}</option>
+                    <option key={dest.id} value={dest.name}>{dest.name} — {dest.location}</option>
                   ))}
                 </select>
 

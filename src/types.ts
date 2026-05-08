@@ -45,3 +45,44 @@ export interface UserBooking {
   status: 'Pending' | 'Confirmed' | 'Cancelled'
   bookedAt: string
 }
+
+
+export type BookingStatus = 'Confirmed' | 'Pending' | 'Cancelled'
+
+export interface AdminBooking {
+  id: string
+  user: string
+  destination: string
+  date: string
+  status: BookingStatus
+  price: number
+}
+
+
+export type CalendarEventType = 'Confirmed' | 'Pending' | 'Blocked'
+
+export interface CalendarEvent {
+  type: CalendarEventType
+  title: string
+  guests: string
+  location: string
+}
+
+export interface Message {
+  id: number
+  from: 'admin' | 'user'
+  text: string
+  time: string
+  date: string
+}
+
+export interface Conversation {
+  id: number
+  name: string
+  status: 'online' | 'offline'
+  tour: string
+  lastMsg: string
+  lastTime: string
+  unread: boolean
+  messages: Message[]
+}
