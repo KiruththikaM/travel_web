@@ -6,6 +6,7 @@ import { fetchStats } from '../../store/slices/statsSlice';
 import AdminLayout from '../components/AdminLayout';
 import StatCard from '../components/StatCard';
 import AdminTable from '../components/AdminTable';
+import { Box } from '@mui/material';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import HistoryIcon from '@mui/icons-material/History';
@@ -30,45 +31,44 @@ const DashboardOverview = () => {
       header: 'Status',
       accessor: 'status',
       render: (item: any) => {
-        const colors = {
+        const colors: Record<string, string> = {
           Confirmed: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-          Pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-          Cancelled: 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+          Pending:   'bg-amber-500/10 text-amber-600 border-amber-500/20',
+          Cancelled: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
         };
-        const statusClass = colors[item.status as keyof typeof colors] || 'bg-slate-500/10 text-slate-600 border-slate-500/20';
         return (
-          <span className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest border ${statusClass}`}>
+          <span className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest border ${colors[item.status] || ''}`}>
             {item.status}
           </span>
         );
-      }
+      },
     },
     {
       header: 'Price',
       accessor: 'price',
-      render: (item: any) => <span className="font-bold text-slate-900">${item.price.toLocaleString()}</span>
+      render: (item: any) => (
+        <Box sx={{ fontWeight: 700, color: 'text.primary' }}>${item.price.toLocaleString()}</Box>
+      ),
     },
   ];
 
   return (
     <AdminLayout>
-      <div className="mb-10">
-        <h1 className="text-3xl font-black text-slate-900 m-0 tracking-tight">Dashboard Overview</h1>
-        <p className="text-slate-500 mt-2 text-base font-medium">
+      <Box sx={{ mb: 5 }}>
+        <Box sx={{ fontSize: 28, fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>Dashboard Overview</Box>
+        <Box sx={{ color: 'text.secondary', mt: 0.5, fontSize: 15 }}>
           Welcome back! Here's a snapshot of your travel platform's performance.
-        </p>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <StatCard title="Total Revenue" value={`${stats.totalRevenue.toLocaleString()}`} icon={<AttachMoneyIcon fontSize="inherit" />} color="#10b981" />
-        <StatCard title="Active Users" value={stats.activeUsers.toLocaleString()} icon={<PeopleAltIcon fontSize="inherit" />} color="#6366f1" />
-        <StatCard title="Upcoming Trips" value={stats.pendingBookings} icon={<HistoryIcon fontSize="inherit" />} color="#f59e0b" />
-        <StatCard title="Total Destinations" value={stats.totalTrips} icon={<FlightTakeoffIcon fontSize="inherit" />} color="#8b5cf6" />
-      </div>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: 3, mb: 6 }}>
+        <StatCard title="Total Revenue"      value={`$${stats.totalRevenue.toLocaleString()}`} icon={<AttachMoneyIcon fontSize="inherit" />}  color="#10b981" />
+        <StatCard title="Active Users"        value={stats.activeUsers.toLocaleString()}         icon={<PeopleAltIcon fontSize="inherit" />}    color="#6366f1" />
+        <StatCard title="Upcoming Trips"      value={stats.pendingBookings}                       icon={<HistoryIcon fontSize="inherit" />}      color="#f59e0b" />
+        <StatCard title="Total Destinations"  value={stats.totalTrips}                            icon={<FlightTakeoffIcon fontSize="inherit" />} color="#8b5cf6" />
+      </Box>
 
-      <div className="grid gap-8">
-        <AdminTable title="Recent Activity" columns={columns} data={bookings} />
-      </div>
+      <AdminTable title="Recent Activity" columns={columns} data={bookings} />
     </AdminLayout>
   );
 };

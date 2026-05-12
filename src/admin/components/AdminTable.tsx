@@ -1,4 +1,5 @@
 import React from 'react';
+import { Box } from '@mui/material';
 
 interface Column {
   header: string;
@@ -14,37 +15,67 @@ interface AdminTableProps {
 
 const AdminTable: React.FC<AdminTableProps> = ({ title, columns, data }) => {
   return (
-    <div className="bg-white/60 backdrop-blur-lg rounded-[24px] p-8 shadow-[0_8px_32px_rgba(31,38,135,0.05)] border border-white/40 overflow-x-auto">
-      <h2 className="text-xl font-extrabold text-slate-800 mb-6">{title}</h2>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-left border-b border-slate-100">
-            {columns.map((col, idx) => (
-              <th key={idx} className="p-4 px-2.5 text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                {col.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item, rowIdx) => (
-            <tr key={rowIdx} className="border-b border-slate-50/50 hover:bg-slate-50/30 transition-colors">
-              {columns.map((col, colIdx) => (
-                <TableCell key={colIdx} item={item} column={col} />
+    <Box sx={{
+      bgcolor: 'background.paper',
+      borderRadius: 4,
+      border: '1px solid', borderColor: 'divider',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+      overflow: 'hidden',
+    }}>
+      <Box sx={{ px: 4, py: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary' }}>{title}</Box>
+      </Box>
+      <Box sx={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {columns.map((col, idx) => (
+                <Box
+                  component="th"
+                  key={idx}
+                  sx={{
+                    px: 2.5, py: 1.5,
+                    textAlign: 'left',
+                    fontSize: 11, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: 1.5,
+                    color: 'text.disabled',
+                    borderBottom: '1px solid', borderColor: 'divider',
+                    bgcolor: 'action.hover',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {col.header}
+                </Box>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-const TableCell = ({ item, column }: { item: any; column: Column }) => {
-  return (
-    <td className="p-5 px-2.5 text-sm text-slate-700">
-      {column.render ? column.render(item) : item[column.accessor]}
-    </td>
+          </thead>
+          <tbody>
+            {data.map((item, rowIdx) => (
+              <Box
+                component="tr"
+                key={rowIdx}
+                sx={{
+                  borderBottom: '1px solid', borderColor: 'divider',
+                  transition: 'background 0.15s',
+                  '&:last-child': { borderBottom: 'none' },
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                {columns.map((col, colIdx) => (
+                  <Box
+                    component="td"
+                    key={colIdx}
+                    sx={{ px: 2.5, py: 2, fontSize: 14, color: 'text.primary' }}
+                  >
+                    {col.render ? col.render(item) : item[col.accessor]}
+                  </Box>
+                ))}
+              </Box>
+            ))}
+          </tbody>
+        </table>
+      </Box>
+    </Box>
   );
 };
 

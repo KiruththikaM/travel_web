@@ -2,22 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store/Store';
 import {
-  fetchDestinations,
-  addDestination,
-  updateDestination,
-  deleteDestination,
+  fetchDestinations, addDestination, updateDestination, deleteDestination,
   type Destination,
 } from '../../store/slices/destinationsSlice';
 import AdminLayout from '../components/AdminLayout';
 import AdminTable from '../components/AdminTable';
+import { Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Rating } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Rating, Box } from '@mui/material';
 
-const ratingLabels: { [index: string]: string } = {
+const ratingLabels: Record<number, string> = {
   0.5: 'Useless', 1: 'Useless+', 1.5: 'Poor', 2: 'Poor+',
   2.5: 'Ok', 3: 'Ok+', 3.5: 'Good', 4: 'Good+', 4.5: 'Excellent', 5: 'Excellent+',
 };
@@ -34,11 +32,21 @@ const DestinationRating = ({ value, onChange }: { value: number; onChange?: (val
         readOnly={!onChange}
         onChangeActive={(_e, newHover) => setHover(newHover)}
       />
-      <Box sx={{ fontSize: 13, color: '#64748b', minWidth: 70 }}>
+      <Box sx={{ fontSize: 13, color: 'text.secondary', minWidth: 70 }}>
         {ratingLabels[hover !== -1 ? hover : value]}
       </Box>
     </Box>
   );
+};
+
+
+const inputSx = {
+  width: '100%', px: 2, py: 1.5, borderRadius: 2,
+  border: '1px solid', borderColor: 'divider',
+  bgcolor: 'background.default', color: 'text.primary',
+  fontSize: 14, outline: 'none',
+  '&:focus': { borderColor: '#6366f1' },
+  transition: 'border-color 0.2s',
 };
 
 const ManageDestinations = () => {
@@ -53,34 +61,26 @@ const ManageDestinations = () => {
   const [formData, setFormData] = useState({ name: '', location: '', price: '', rating: '4.5', image: '' });
 
   useEffect(() => {
-    if (status === 'idle' && destinations.length === 0) {
-      dispatch(fetchDestinations());
-    }
+    if (status === 'idle' && destinations.length === 0) dispatch(fetchDestinations());
   }, [dispatch, status, destinations.length]);
 
   const handleOpenAdd = () => {
-    setIsEditMode(false);
-    setEditingId(null);
+    setIsEditMode(false); setEditingId(null);
     setFormData({ name: '', location: '', price: '', rating: '4.5', image: '' });
     setShowModal(true);
   };
 
   const handleOpenEdit = (item: Destination) => {
-    setIsEditMode(true);
-    setEditingId(item.id);
+    setIsEditMode(true); setEditingId(item.id);
     setFormData({ name: item.name, location: item.location, price: item.price.toString(), rating: item.rating.toString(), image: item.image });
     setShowModal(true);
   };
 
-  const handleOpenDelete = (id: string) => {
-    setItemToDelete(id);
-    setDeleteConfirmOpen(true);
-  };
+  const handleOpenDelete = (id: string) => { setItemToDelete(id); setDeleteConfirmOpen(true); };
 
   const handleDeleteConfirm = () => {
     if (itemToDelete) dispatch(deleteDestination(itemToDelete));
-    setDeleteConfirmOpen(false);
-    setItemToDelete(null);
+    setDeleteConfirmOpen(false); setItemToDelete(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -88,12 +88,7 @@ const ManageDestinations = () => {
     if (isEditMode && editingId) {
       dispatch(updateDestination({ ...formData, id: editingId, price: Number(formData.price), rating: Number(formData.rating) }));
     } else {
-      dispatch(addDestination({
-        ...formData,
-        id: `D${Date.now()}`,
-        price: Number(formData.price),
-        rating: Number(formData.rating),
-      }));
+      dispatch(addDestination({ ...formData, id: `D${Date.now()}`, price: Number(formData.price), rating: Number(formData.rating) }));
     }
     setShowModal(false);
     setFormData({ name: '', location: '', price: '', rating: '4.5', image: '' });
@@ -103,114 +98,142 @@ const ManageDestinations = () => {
     {
       header: 'Package', accessor: 'name',
       render: (item: Destination) => (
-        <div className="flex items-center gap-3">
-          <img src={item.image} alt={item.name} className="w-12 h-12 rounded-xl object-cover shadow-sm border border-slate-100" />
-          <div>
-            <div className="font-bold text-slate-900">{item.name}</div>
-            <div className="text-[11px] text-slate-500 font-medium">{item.location}</div>
-          </div>
-        </div>
-      )
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box component="img" src={item.image} alt={item.name} sx={{ width: 48, height: 48, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} />
+          <Box>
+            <Box sx={{ fontWeight: 700, color: 'text.primary', fontSize: 14 }}>{item.name}</Box>
+            <Box sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>{item.location}</Box>
+          </Box>
+        </Box>
+      ),
     },
     {
       header: 'Price', accessor: 'price',
-      render: (item: Destination) => <span className="font-bold text-slate-900">${item.price.toLocaleString()}</span>
+      render: (item: Destination) => <Box sx={{ fontWeight: 700, color: 'text.primary' }}>${item.price.toLocaleString()}</Box>,
     },
     {
       header: 'Rating', accessor: 'rating',
       render: (item: Destination) => (
-        <DestinationRating
-          value={item.rating}
-          onChange={(val) => dispatch(updateDestination({ ...item, rating: val }))}
-        />
-      )
+        <DestinationRating value={item.rating} onChange={(val) => dispatch(updateDestination({ ...item, rating: val }))} />
+      ),
     },
     {
       header: 'Actions', accessor: 'id',
       render: (item: Destination) => (
-        <div className="flex gap-2">
-          <button onClick={() => handleOpenEdit(item)} className="flex items-center justify-center w-9 h-9 border border-indigo-500/20 text-indigo-600 bg-indigo-50/50 rounded-xl transition-all hover:bg-indigo-600 hover:text-white">
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box
+            component="button"
+            onClick={() => handleOpenEdit(item)}
+            sx={{ width: 36, height: 36, borderRadius: 2, border: '1px solid rgba(99,102,241,0.3)', color: '#6366f1', bgcolor: 'rgba(99,102,241,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', '&:hover': { bgcolor: '#6366f1', color: '#fff' } }}
+          >
             <EditIcon fontSize="small" />
-          </button>
-          <button onClick={() => handleOpenDelete(item.id)} className="flex items-center justify-center w-9 h-9 border border-rose-500/10 text-rose-500 bg-rose-50/50 rounded-xl transition-all hover:bg-rose-500 hover:text-white">
+          </Box>
+          <Box
+            component="button"
+            onClick={() => handleOpenDelete(item.id)}
+            sx={{ width: 36, height: 36, borderRadius: 2, border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', bgcolor: 'rgba(239,68,68,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', '&:hover': { bgcolor: '#ef4444', color: '#fff' } }}
+          >
             <DeleteOutlineIcon fontSize="small" />
-          </button>
-        </div>
-      )
-    }
+          </Box>
+        </Box>
+      ),
+    },
   ];
+
+  const FormLabel = ({ children }: { children: React.ReactNode }) => (
+    <Box sx={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: 'text.disabled', mb: 1 }}>
+      {children}
+    </Box>
+  );
 
   return (
     <AdminLayout>
-      <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 m-0 tracking-tight">Destinations</h1>
-          <p className="text-slate-500 mt-2 text-base font-medium">Manage your travel packages and destination catalog.</p>
-        </div>
-        <button onClick={handleOpenAdd} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-[0_10px_20px_rgba(79,70,229,0.2)] transition-all hover:-translate-y-0.5 hover:shadow-[0_15px_25px_rgba(79,70,229,0.3)]">
-          <AddIcon /> Add New Package
-        </button>
-      </div>
+      <Box sx={{ mb: 5, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2 }}>
+        <Box>
+          <Box sx={{ fontSize: 28, fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>Destinations</Box>
+          <Box sx={{ color: 'text.secondary', mt: 0.5, fontSize: 15 }}>Manage your travel packages and destination catalog.</Box>
+        </Box>
+        <Box
+          component="button"
+          onClick={handleOpenAdd}
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1,
+            bgcolor: '#6366f1', color: '#fff', px: 3, py: 1.5,
+            borderRadius: 3, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer',
+            boxShadow: '0 8px 20px rgba(99,102,241,0.25)',
+            transition: 'all 0.2s',
+            '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 24px rgba(99,102,241,0.35)' },
+          }}
+        >
+          <AddIcon sx={{ fontSize: 20 }} /> Add New Package
+        </Box>
+      </Box>
 
-      {status === 'loading' && <p className="text-slate-400 text-sm">Loading...</p>}
-      {status === 'error' && <p className="text-rose-500 text-sm">Failed to load destinations.</p>}
+      {status === 'loading' && <Box sx={{ color: 'text.secondary', fontSize: 13 }}>Loading...</Box>}
+      {status === 'error'   && <Box sx={{ color: 'error.main',    fontSize: 13 }}>Failed to load destinations.</Box>}
 
       <AdminTable title="Package Inventory" columns={columns} data={destinations} />
 
-     
-      <Dialog open={showModal} onClose={() => setShowModal(false)} PaperProps={{ sx: { borderRadius: '24px', maxWidth: '500px', width: '100%' } }}>
-        <div className="flex justify-between items-center px-6 pt-6 pb-2">
-          <h2 className="text-2xl font-black text-slate-900 m-0">{isEditMode ? 'Edit Package' : 'Add New Package'}</h2>
-          <button onClick={() => setShowModal(false)} className="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-full transition-colors">
+      
+      <Dialog open={showModal} onClose={() => setShowModal(false)} PaperProps={{ sx: { borderRadius: 4, maxWidth: 500, width: '100%' } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 3, pt: 3, pb: 1 }}>
+          <Box sx={{ fontSize: 22, fontWeight: 900, color: 'text.primary' }}>
+            {isEditMode ? 'Edit Package' : 'Add New Package'}
+          </Box>
+          <Box
+            component="button"
+            onClick={() => setShowModal(false)}
+            sx={{ p: 1, bgcolor: 'action.hover', color: 'text.secondary', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', '&:hover': { color: 'text.primary' } }}
+          >
             <CloseIcon fontSize="small" />
-          </button>
-        </div>
-        <DialogContent className="px-6 py-2">
-          <p className="text-slate-500 mb-6 text-sm font-medium">
+          </Box>
+        </Box>
+        <DialogContent sx={{ px: 3, py: 1 }}>
+          <Box sx={{ color: 'text.secondary', mb: 3, fontSize: 14 }}>
             {isEditMode ? 'Update the details of the travel destination.' : 'Fill in the details to create a new travel destination.'}
-          </p>
-          <form id="destination-form" onSubmit={handleSubmit} className="grid gap-5">
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Package Name</label>
-              <input type="text" required placeholder="e.g. Tropical Maldives Getaway" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm" />
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Location</label>
-              <input type="text" required placeholder="e.g. Male, Maldives" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Price ($)</label>
-                <input type="number" required placeholder="1200" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm" />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Rating</label>
+          </Box>
+          <Box component="form" id="destination-form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
+            <Box>
+              <FormLabel>Package Name</FormLabel>
+              <Box component="input" type="text" required placeholder="e.g. Tropical Maldives Getaway" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })} sx={inputSx} />
+            </Box>
+            <Box>
+              <FormLabel>Location</FormLabel>
+              <Box component="input" type="text" required placeholder="e.g. Male, Maldives" value={formData.location} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, location: e.target.value })} sx={inputSx} />
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <FormLabel>Price ($)</FormLabel>
+                <Box component="input" type="number" required placeholder="1200" value={formData.price} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, price: e.target.value })} sx={inputSx} />
+              </Box>
+              <Box>
+                <FormLabel>Rating</FormLabel>
                 <DestinationRating value={Number(formData.rating)} onChange={(val) => setFormData({ ...formData, rating: val.toString() })} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Image URL</label>
-              <input type="text" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm" placeholder="https://images.unsplash.com/..." />
-            </div>
-          </form>
+              </Box>
+            </Box>
+            <Box>
+              <FormLabel>Image URL</FormLabel>
+              <Box component="input" type="text" value={formData.image} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, image: e.target.value })} placeholder="https://images.unsplash.com/..." sx={inputSx} />
+            </Box>
+          </Box>
         </DialogContent>
-        <DialogActions className="px-6 pb-6 pt-2">
-          <Button onClick={() => setShowModal(false)} sx={{ color: '#64748b', fontWeight: 'bold' }}>Cancel</Button>
-          <Button type="submit" form="destination-form" variant="contained" sx={{ bgcolor: '#4f46e5', borderRadius: '12px', textTransform: 'none', fontWeight: 'bold', px: 3, boxShadow: '0 10px 20px rgba(79,70,229,0.3)', '&:hover': { bgcolor: '#4338ca' } }}>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+          <Button onClick={() => setShowModal(false)} sx={{ color: 'text.secondary', fontWeight: 700 }}>Cancel</Button>
+          <Button type="submit" form="destination-form" variant="contained" sx={{ bgcolor: '#6366f1', borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#4f46e5' } }}>
             {isEditMode ? 'Update Package' : 'Create Package'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ sx: { borderRadius: '24px', p: 1, maxWidth: 400 } }}>
-        <DialogTitle className="text-xl font-black text-slate-900 pb-1">Confirm Deletion</DialogTitle>
+     
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ sx: { borderRadius: 4, p: 1, maxWidth: 400 } }}>
+        <DialogTitle sx={{ fontWeight: 900, color: 'text.primary' }}>Confirm Deletion</DialogTitle>
         <DialogContent>
-          <p className="text-slate-500 font-medium text-sm mt-2">Are you sure you want to delete this destination? This action cannot be undone.</p>
+          <Box sx={{ color: 'text.secondary', fontSize: 14 }}>Are you sure you want to delete this destination? This action cannot be undone.</Box>
         </DialogContent>
-        <DialogActions className="px-6 pb-4">
-          <Button onClick={() => setDeleteConfirmOpen(false)} sx={{ color: '#64748b', fontWeight: 'bold' }}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} variant="contained" color="error" sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 'bold', px: 3 }}>OK</Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setDeleteConfirmOpen(false)} sx={{ color: 'text.secondary', fontWeight: 700 }}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3 }}>Delete</Button>
         </DialogActions>
       </Dialog>
     </AdminLayout>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate} from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Box, Typography, TextField, Grid, Divider, Alert, Paper, Container } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -9,13 +9,16 @@ import StarIcon from '@mui/icons-material/Star';
 import LuggageIcon from '@mui/icons-material/Luggage';
 import { destinations } from '../components/Destinations';
 import type { Destination, UserBooking } from '../types';
-import type { RootState } from '../store/Store';
+import type { RootState, AppDispatch } from '../store/Store';
+import { addBooking } from '../store/slices/bookingsSlice';
+import type { Booking } from '../store/slices/bookingsSlice';
 import Button from '../components/Button';
 
 function Book() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useDispatch<AppDispatch>();
   const dest: Destination | undefined = destinations.find(d => d.id === id);
   const [submitted, setSubmitted] = useState(false);
   const [flyPos, setFlyPos] = useState<{ x: number; y: number; tx: number; ty: number } | null>(null);
@@ -40,9 +43,12 @@ function Book() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const bookingId = `BK-${Date.now()}`;
+
     if (user) {
-      const booking: UserBooking = {
-        id: `BK-${Date.now()}`,
+    
+      const userBooking: UserBooking = {
+        id: bookingId,
         destinationId: dest.id,
         destinationName: dest.name,
         destinationImage: dest.image,
@@ -56,9 +62,26 @@ function Book() {
       };
       const key = `bookings_${user.email}`;
       const existing: UserBooking[] = JSON.parse(localStorage.getItem(key) || '[]');
-      existing.unshift(booking);
+      existing.unshift(userBooking);
       localStorage.setItem(key, JSON.stringify(existing));
     }
+
+   
+    const adminBooking: Booking = {
+      id: bookingId,
+      user: user ? user.name : `${form.firstName} ${form.lastName}`,
+      destination: dest.name,
+      destinationName: dest.name,
+      destinationImage: dest.image,
+      location: dest.category,
+      checkIn: form.checkIn,
+      checkOut: form.checkOut,
+      guests: Number(form.guests),
+      date: form.checkIn,
+      status: 'Pending',
+      price: 1250,
+    };
+    dispatch(addBooking(adminBooking));
 
   
     const navIcon = document.getElementById('nav-bookings-icon');

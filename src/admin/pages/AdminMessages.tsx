@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store/Store';
 import { sendAdminReply, markAsRead } from '../../store/slices/messagesSlice';
 import AdminLayout from '../components/AdminLayout';
+import { Box } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
 import type { Message } from '../../types';
@@ -23,11 +24,8 @@ export default function AdminMessages() {
   const [search, setSearch] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
-
   useEffect(() => {
-    if (conversations.length > 0 && activeId === null) {
-      setActiveId(conversations[0].id);
-    }
+    if (conversations.length > 0 && activeId === null) setActiveId(conversations[0].id);
   }, [conversations, activeId]);
 
   const active = conversations.find(c => c.id === activeId);
@@ -48,13 +46,10 @@ export default function AdminMessages() {
 
   const filtered = conversations.filter(c => {
     const matchFilter = filter === 'all' || c.unread;
-    const matchSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.tour.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.tour.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
-  
   const groupedMessages: { date: string; msgs: Message[] }[] = [];
   if (active) {
     active.messages.forEach(msg => {
@@ -66,186 +61,198 @@ export default function AdminMessages() {
 
   return (
     <AdminLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Messages</h1>
-        <p className="text-slate-400 text-sm mt-0.5">Togo / Messages</p>
-      </div>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ fontSize: 24, fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>Messages</Box>
+        <Box sx={{ color: 'text.secondary', fontSize: 13, mt: 0.5 }}>Togo / Messages</Box>
+      </Box>
 
-      <div className="flex bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 220px)', minHeight: 480 }}>
+      <Box sx={{
+        display: 'flex', bgcolor: 'background.paper',
+        borderRadius: 3, border: '1px solid', borderColor: 'divider',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        overflow: 'hidden', height: 'calc(100vh - 220px)', minHeight: 480,
+      }}>
 
         
-        <div className="w-72 flex-shrink-0 border-r border-slate-100 flex flex-col">
-          <div className="p-3 border-b border-slate-100">
-            <div className="relative">
-              <SearchIcon sx={{ fontSize: 16, color: '#94a3b8', position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
-              <input
+        <Box sx={{ width: 280, flexShrink: 0, borderRight: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' }}>
+
+          
+          <Box sx={{ p: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ position: 'relative' }}>
+              <SearchIcon sx={{ fontSize: 16, color: 'text.disabled', position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+              <Box
+                component="input"
                 type="text"
                 placeholder="Search conversations..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-red-400 bg-slate-50 placeholder-slate-400 text-slate-700"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 px-3 py-2 border-b border-slate-100">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${filter === 'all' ? 'bg-red-500 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
-            >
-              All Chats
-            </button>
-            <button
-              onClick={() => setFilter('unread')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${filter === 'unread' ? 'bg-red-500 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
-            >
-              Unread
-              {conversations.filter(c => c.unread).length > 0 && (
-                <span className="ml-1 bg-white text-red-500 rounded-full px-1.5 text-[10px]">
-                  {conversations.filter(c => c.unread).length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 && (
-              <div className="text-center py-12 text-slate-400 text-sm">
-                No messages yet.<br />
-                <span className="text-xs">Messages from the contact form will appear here.</span>
-              </div>
-            )}
-            {filtered.map((c, i) => (
-              <div
-                key={c.id}
-                onClick={() => {
-                  setActiveId(c.id);
-                  dispatch(markAsRead(c.id));
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                sx={{
+                  width: '100%', pl: 4, pr: 1.5, py: 1, fontSize: 13,
+                  border: '1px solid', borderColor: 'divider', borderRadius: 2,
+                  outline: 'none', bgcolor: 'action.hover', color: 'text.primary',
+                  '&:focus': { borderColor: '#fb5b52' },
+                  '&::placeholder': { color: 'text.disabled' },
                 }}
-                className={`flex items-start gap-3 px-4 py-3 cursor-pointer border-b border-slate-50 transition-colors
-                  ${activeId === c.id ? 'bg-red-50 border-l-2 border-l-red-500' : 'hover:bg-slate-50'}`}
-              >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5"
-                  style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-                >
-                  {getInitials(c.name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800 text-sm truncate">{c.name}</span>
-                    <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">{c.lastTime}</span>
-                  </div>
-                  <p className="text-[11px] text-red-500 font-semibold uppercase tracking-wide truncate leading-tight mt-0.5">
-                    {c.tour.length > 30 ? c.tour.slice(0, 30).toUpperCase() + '...' : c.tour.toUpperCase()}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate mt-0.5">{c.lastMsg}</p>
-                </div>
-                {c.unread && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1.5" />}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        
-        {active ? (
-          <div className="flex-1 flex flex-col min-w-0">
-           
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: AVATAR_COLORS[conversations.findIndex(c => c.id === activeId) % AVATAR_COLORS.length] }}
-                >
-                  {getInitials(active.name)}
-                </div>
-                <div>
-                  <p className="font-black text-slate-800 text-sm leading-tight">{active.name}</p>
-                  <p className={`text-xs font-semibold ${active.status === 'online' ? 'text-emerald-500' : 'text-slate-400'}`}>
-                    {active.status === 'online' ? 'Online' : 'Offline'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-         
-            <div className="flex items-center justify-between px-6 py-2.5 bg-red-50 border-b border-red-100">
-              <p className="text-xs text-slate-600">
-                <span className="font-bold text-slate-700">Inquiry: </span>
-                <span className="text-red-500 font-semibold">{active.tour}</span>
-              </p>
-              <button className="text-xs font-bold text-red-500 hover:text-red-600 whitespace-nowrap ml-4">
-                VIEW TOUR DETAILS ›
-              </button>
-            </div>
-
-           
-            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-1">
-              {groupedMessages.map(group => (
-                <div key={group.date}>
-                  <div className="flex items-center justify-center my-4">
-                    <span className="text-xs text-slate-400 font-semibold bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                      {group.date}
-                    </span>
-                  </div>
-                  {group.msgs.map(msg => (
-                    <div key={msg.id} className={`flex mb-3 ${msg.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                      {msg.from === 'user' && (
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mr-2 mt-1"
-                          style={{ backgroundColor: AVATAR_COLORS[conversations.findIndex(c => c.id === activeId) % AVATAR_COLORS.length] }}
-                        >
-                          {getInitials(active.name)}
-                        </div>
-                      )}
-                      <div className={`flex flex-col ${msg.from === 'admin' ? 'items-end' : 'items-start'}`}>
-                        <div className={`px-4 py-2 rounded-2xl text-sm font-medium max-w-xs break-words
-                          ${msg.from === 'admin'
-                            ? 'bg-red-500 text-white rounded-br-sm'
-                            : 'bg-slate-100 text-slate-700 rounded-bl-sm'
-                          }`}
-                        >
-                          {msg.text}
-                        </div>
-                        <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-              <div ref={bottomRef} />
-            </div>
+              />
+            </Box>
+          </Box>
 
           
-            <div className="px-4 py-3 border-t border-slate-100">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
-                <input
+          <Box sx={{ display: 'flex', gap: 1, px: 1.5, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+            {(['all', 'unread'] as const).map(f => (
+              <Box
+                key={f}
+                component="button"
+                onClick={() => setFilter(f)}
+                sx={{
+                  px: 1.5, py: 0.5, borderRadius: 10, fontSize: 12, fontWeight: 700,
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                  bgcolor: filter === f ? '#fb5b52' : 'transparent',
+                  color: filter === f ? '#fff' : 'text.secondary',
+                  '&:hover': filter !== f ? { bgcolor: 'action.hover' } : {},
+                }}
+              >
+                {f === 'all' ? 'All Chats' : `Unread${conversations.filter(c => c.unread).length > 0 ? ` (${conversations.filter(c => c.unread).length})` : ''}`}
+              </Box>
+            ))}
+          </Box>
+
+         
+          <Box sx={{ flex: 1, overflowY: 'auto' }}>
+            {filtered.length === 0 && (
+              <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary', fontSize: 13 }}>
+                No messages yet.<br />
+                <Box component="span" sx={{ fontSize: 11 }}>Messages from the contact form will appear here.</Box>
+              </Box>
+            )}
+            {filtered.map((c, i) => (
+              <Box
+                key={c.id}
+                onClick={() => { setActiveId(c.id); dispatch(markAsRead(c.id)); }}
+                sx={{
+                  display: 'flex', alignItems: 'flex-start', gap: 1.5,
+                  px: 2, py: 1.5, cursor: 'pointer',
+                  borderBottom: '1px solid', borderColor: 'divider',
+                  borderLeft: activeId === c.id ? '2px solid #fb5b52' : '2px solid transparent',
+                  bgcolor: activeId === c.id ? 'rgba(251,91,82,0.06)' : 'transparent',
+                  transition: 'all 0.15s',
+                  '&:hover': { bgcolor: activeId === c.id ? 'rgba(251,91,82,0.06)' : 'action.hover' },
+                }}
+              >
+                <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: AVATAR_COLORS[i % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0, mt: 0.25 }}>
+                  {getInitials(c.name)}
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ fontWeight: 700, color: 'text.primary', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</Box>
+                    <Box sx={{ fontSize: 10, color: 'text.disabled', flexShrink: 0, ml: 0.5 }}>{c.lastTime}</Box>
+                  </Box>
+                  <Box sx={{ fontSize: 11, color: '#fb5b52', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mt: 0.25 }}>
+                    {c.tour.length > 28 ? c.tour.slice(0, 28).toUpperCase() + '...' : c.tour.toUpperCase()}
+                  </Box>
+                  <Box sx={{ fontSize: 12, color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mt: 0.25 }}>{c.lastMsg}</Box>
+                </Box>
+                {c.unread && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#fb5b52', flexShrink: 0, mt: 1.5 }} />}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+       
+        {active ? (
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: AVATAR_COLORS[conversations.findIndex(c => c.id === activeId) % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>
+                  {getInitials(active.name)}
+                </Box>
+                <Box>
+                  <Box sx={{ fontWeight: 900, color: 'text.primary', fontSize: 13 }}>{active.name}</Box>
+                  <Box sx={{ fontSize: 12, fontWeight: 600, color: active.status === 'online' ? '#10b981' : 'text.disabled' }}>
+                    {active.status === 'online' ? 'Online' : 'Offline'}
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+
+           
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.25, bgcolor: 'rgba(251,91,82,0.06)', borderBottom: '1px solid rgba(251,91,82,0.15)' }}>
+              <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
+                <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>Inquiry: </Box>
+                <Box component="span" sx={{ color: '#fb5b52', fontWeight: 600 }}>{active.tour}</Box>
+              </Box>
+              <Box component="button" sx={{ fontSize: 11, fontWeight: 700, color: '#fb5b52', border: 'none', bgcolor: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap', ml: 2, '&:hover': { color: '#e04840' } }}>
+                VIEW TOUR DETAILS ›
+              </Box>
+            </Box>
+
+           
+            <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {groupedMessages.map(group => (
+                <Box key={group.date}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                    <Box sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600, bgcolor: 'action.hover', px: 2, py: 0.5, borderRadius: 10, border: '1px solid', borderColor: 'divider' }}>
+                      {group.date}
+                    </Box>
+                  </Box>
+                  {group.msgs.map(msg => (
+                    <Box key={msg.id} sx={{ display: 'flex', mb: 1.5, justifyContent: msg.from === 'admin' ? 'flex-end' : 'flex-start' }}>
+                      {msg.from === 'user' && (
+                        <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: AVATAR_COLORS[conversations.findIndex(c => c.id === activeId) % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, flexShrink: 0, mr: 1, mt: 0.5 }}>
+                          {getInitials(active.name)}
+                        </Box>
+                      )}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: msg.from === 'admin' ? 'flex-end' : 'flex-start' }}>
+                        <Box sx={{
+                          px: 2, py: 1, borderRadius: msg.from === 'admin' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                          fontSize: 14, fontWeight: 500, maxWidth: 280, wordBreak: 'break-word',
+                          bgcolor: msg.from === 'admin' ? '#fb5b52' : 'action.selected',
+                          color: msg.from === 'admin' ? '#fff' : 'text.primary',
+                        }}>
+                          {msg.text}
+                        </Box>
+                        <Box sx={{ fontSize: 10, color: 'text.disabled', mt: 0.5, px: 0.5 }}>{msg.time}</Box>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              ))}
+              <div ref={bottomRef} />
+            </Box>
+
+            <Box sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', borderRadius: 3, px: 2, py: 1 }}>
+                <Box
+                  component="input"
                   type="text"
                   placeholder="Type your message..."
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder-slate-400"
+                  sx={{ flex: 1, bgcolor: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'text.primary', '&::placeholder': { color: 'text.disabled' } }}
                 />
-                <button
+                <Box
+                  component="button"
                   onClick={sendMessage}
-                  className="w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors flex-shrink-0"
+                  sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: '#fb5b52', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, transition: 'background 0.15s', '&:hover': { bgcolor: '#e04840' } }}
                 >
                   <SendIcon sx={{ fontSize: 16 }} />
-                </button>
-              </div>
-            </div>
-          </div>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-            <div className="text-center">
-              <p className="text-4xl mb-3">💬</p>
-              <p className="font-semibold">No conversation selected</p>
-              <p className="text-xs mt-1">Messages from the contact form will appear here</p>
-            </div>
-          </div>
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.secondary', fontSize: 14 }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ fontSize: 40, mb: 1.5 }}>💬</Box>
+              <Box sx={{ fontWeight: 600, color: 'text.primary' }}>No conversation selected</Box>
+              <Box sx={{ fontSize: 12, mt: 0.5 }}>Messages from the contact form will appear here</Box>
+            </Box>
+          </Box>
         )}
-      </div>
+      </Box>
     </AdminLayout>
   );
 }

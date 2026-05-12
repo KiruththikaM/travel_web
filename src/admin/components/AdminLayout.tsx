@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
+import { Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -11,45 +12,72 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 relative overflow-x-hidden">
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', position: 'relative', overflowX: 'hidden' }}>
 
-      <div className="hidden lg:block w-[260px] fixed h-full z-50">
+     
+      <Box sx={{ display: { xs: 'none', lg: 'block' }, width: 260, flexShrink: 0, position: 'fixed', height: '100%', zIndex: 50 }}>
         <Sidebar />
-      </div>
+      </Box>
 
-      <div className={`
-        lg:hidden fixed inset-0 z-50 transition-all duration-300 transform
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
-        <div className="relative w-[280px] h-full bg-white shadow-2xl">
-          <div className="absolute top-4 right-4 text-white cursor-pointer" onClick={() => setIsSidebarOpen(false)}>
+      
+      <Box sx={{
+        display: { lg: 'none' },
+        position: 'fixed', inset: 0, zIndex: 50,
+        transition: 'transform 0.3s',
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+      }}>
+        <Box
+          sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setIsSidebarOpen(false)}
+        />
+        <Box sx={{ position: 'relative', width: 280, height: '100%', bgcolor: 'background.paper', boxShadow: 8 }}>
+          <Box
+            onClick={() => setIsSidebarOpen(false)}
+            sx={{ position: 'absolute', top: 16, right: 16, color: 'text.secondary', cursor: 'pointer', zIndex: 1 }}
+          >
             <CloseIcon />
-          </div>
+          </Box>
           <Sidebar />
-        </div>
-      </div>
+        </Box>
+      </Box>
 
+      
+      <Box sx={{ flex: 1, width: '100%', ml: { lg: '260px' }, transition: 'margin 0.3s' }}>
 
-      <div className={`flex-1 w-full lg:ml-[260px] transition-all duration-300`}>
-
-        <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center px-6 sticky top-0 z-40">
-          <button
-            className="p-2 -ml-2 text-slate-600 hover:text-red-500 transition"
+       
+        <Box sx={{
+          display: { xs: 'flex', lg: 'none' },
+          height: 64,
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          alignItems: 'center',
+          px: 3,
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+        }}>
+          <Box
+            component="button"
             onClick={() => setIsSidebarOpen(true)}
+            sx={{
+              p: 1, ml: -1, background: 'none', border: 'none', cursor: 'pointer',
+              color: 'text.secondary', display: 'flex', alignItems: 'center',
+              '&:hover': { color: '#fb5b52' }, transition: 'color 0.2s',
+            }}
           >
             <MenuIcon />
-          </button>
-          <div className="ml-4 font-bold text-slate-900">Admin Panel</div>
-        </header>
+          </Box>
+          <Box sx={{ ml: 2, fontWeight: 800, color: 'text.primary', fontSize: 16 }}>Admin Panel</Box>
+        </Box>
 
-        <main className="p-6 md:p-10 lg:p-12">
-          <div className="max-w-7xl mx-auto">
+        <Box component="main" sx={{ p: { xs: 3, md: 5, lg: 6 } }}>
+          <Box sx={{ maxWidth: 1280, mx: 'auto' }}>
             {children}
-          </div>
-        </main>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

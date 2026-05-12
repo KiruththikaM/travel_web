@@ -1,3 +1,5 @@
+import type React from 'react'
+
 export interface Destination {
   id: string
   name: string
@@ -66,6 +68,13 @@ export interface CalendarEvent {
   title: string
   guests: string
   location: string
+}
+
+
+export interface AdminNavItem {
+  name: string
+  path: string
+  icon: React.ReactNode
 }
 
 export interface Message {

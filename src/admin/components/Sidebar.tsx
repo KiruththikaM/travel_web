@@ -2,6 +2,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import type { AppDispatch } from '../../store/Store';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import { useThemeContext } from '../../context/ThemeContext';
+import type { AdminNavItem } from '../../types';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PublicIcon from '@mui/icons-material/Public';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -12,88 +15,116 @@ import TourIcon from '@mui/icons-material/Tour';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import ChatIcon from '@mui/icons-material/Chat';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+
+const mainItems: AdminNavItem[] = [
+  { name: 'Dashboard',  path: '/admin',               icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
+  { name: 'My Tour',    path: '/admin/destinations',   icon: <TourIcon sx={{ fontSize: 20 }} /> },
+  { name: 'Bookings',   path: '/admin/bookings',       icon: <ConfirmationNumberIcon sx={{ fontSize: 20 }} /> },
+  { name: 'Calendar',   path: '/admin/calendar',       icon: <CalendarMonthIcon sx={{ fontSize: 20 }} /> },
+  { name: 'Messages',   path: '/admin/messages',       icon: <ChatIcon sx={{ fontSize: 20 }} /> },
+  { name: 'Users',      path: '/admin/users',          icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
+  { name: 'Settings',   path: '/admin/settings',       icon: <SettingsIcon sx={{ fontSize: 20 }} /> },
+];
+
+const insightItems: AdminNavItem[] = [
+  { name: 'Analytics', path: '/admin/analytics',  icon: <AnalyticsIcon sx={{ fontSize: 20 }} /> },
+  { name: 'Top Tours', path: '/admin/top-tours',  icon: <PublicIcon sx={{ fontSize: 20 }} /> },
+];
+
+const NavItem = ({ item, currentPath }: { item: AdminNavItem; currentPath: string }) => {
+  const isActive = currentPath === item.path;
+  return (
+    <Link to={item.path} style={{ textDecoration: 'none' }}>
+      <Box sx={{
+        display: 'flex', alignItems: 'center', gap: 1.5,
+        px: 2, py: 1.25, borderRadius: 3,
+        fontSize: 14, fontWeight: 600,
+        transition: 'all 0.2s',
+        bgcolor: isActive ? '#fb5b52' : 'transparent',
+        color: isActive ? '#fff' : 'text.secondary',
+        boxShadow: isActive ? '0 4px 12px rgba(251,91,82,0.25)' : 'none',
+        '&:hover': isActive ? {} : { bgcolor: 'action.hover', color: 'text.primary' },
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', color: isActive ? '#fff' : 'text.disabled' }}>
+          {item.icon}
+        </Box>
+        {item.name}
+      </Box>
+    </Link>
+  );
+};
+
+const SectionLabel = ({ label }: { label: string }) => (
+  <Box sx={{ fontSize: 10, fontWeight: 700, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 2, px: 2, mb: 1 }}>
+    {label}
+  </Box>
+);
 
 const Sidebar = () => {
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { mode, toggleTheme } = useThemeContext();
 
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
   };
 
-  const mainItems = [
-    { name: 'Dashboard', path: '/admin', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
-    { name: 'My Tour', path: '/admin/destinations', icon: <TourIcon sx={{ fontSize: 20 }} /> },
-    { name: 'Bookings', path: '/admin/bookings', icon: <ConfirmationNumberIcon sx={{ fontSize: 20 }} /> },
-    { name: 'Calendar', path: '/admin/calendar', icon: <CalendarMonthIcon sx={{ fontSize: 20 }} /> },
-    { name: 'Messages', path: '/admin/messages', icon: <ChatIcon sx={{ fontSize: 20 }} /> },
-    { name: 'Users', path: '/admin/users', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
-    { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon sx={{ fontSize: 20 }} /> },
-  ];
-
-  const insightItems = [
-    { name: 'Analytics', path: '/admin/analytics', icon: <AnalyticsIcon sx={{ fontSize: 20 }} /> },
-    { name: 'Top Tours', path: '/admin/top-tours', icon: <PublicIcon sx={{ fontSize: 20 }} /> },
-  ];
-
-  const NavItem = ({ item }: { item: typeof mainItems[0] }) => {
-    const isActive = location.pathname === item.path;
-    return (
-      <Link
-        to={item.path}
-        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group text-sm font-semibold ${
-          isActive
-            ? 'bg-red-500 text-white shadow-md shadow-red-200'
-            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-        }`}
-      >
-        <span className={`flex items-center ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}`}>
-          {item.icon}
-        </span>
-        {item.name}
-      </Link>
-    );
-  };
-
   return (
-    <div className="w-full h-full bg-white border-r border-slate-200 flex flex-col" style={{ fontFamily: 'inherit' }}>
-  
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-100">
-        <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-base">✈️</span>
-        </div>
-        <h1 className="text-lg font-extrabold text-slate-900 m-0 tracking-tight">
-          Tour<span className="text-red-500">X</span>Pro
-        </h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Main</p>
-        <nav className="space-y-0.5 mb-6">
-          {mainItems.map(item => <NavItem key={item.name} item={item} />)}
-        </nav>
+    <Box sx={{ width: '100%', height: '100%', bgcolor: 'background.paper', borderRight: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' }}>
 
       
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Insights</p>
-        <nav className="space-y-0.5 mb-6">
-          {insightItems.map(item => <NavItem key={item.name} item={item} />)}
-        </nav>
-      </div>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: '#fb5b52', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 16 }}>✈️</span>
+          </Box>
+          <Box sx={{ fontWeight: 800, fontSize: 18, color: 'text.primary', letterSpacing: '-0.5px' }}>
+            Tour<span style={{ color: '#fb5b52' }}>X</span>Pro
+          </Box>
+        </Box>
+        <Tooltip title={mode === 'dark' ? 'Light mode' : 'Dark mode'}>
+          <IconButton onClick={toggleTheme} size="small" sx={{ color: 'text.secondary' }}>
+            {mode === 'dark' ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        </Tooltip>
+      </Box>
 
      
-      <div className="px-4 py-4 border-t border-slate-100">
-        <button
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>
+        <SectionLabel label="Main" />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 3 }}>
+          {mainItems.map(item => <NavItem key={item.name} item={item} currentPath={location.pathname} />)}
+        </Box>
+
+        <SectionLabel label="Insights" />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {insightItems.map(item => <NavItem key={item.name} item={item} currentPath={location.pathname} />)}
+        </Box>
+      </Box>
+
+      
+      <Box sx={{ px: 2, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box
+          component="button"
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-semibold"
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            width: '100%', px: 2, py: 1.25, borderRadius: 3,
+            fontSize: 14, fontWeight: 600,
+            color: 'text.secondary', background: 'none', border: 'none', cursor: 'pointer',
+            transition: 'all 0.2s',
+            '&:hover': { bgcolor: 'rgba(251,91,82,0.08)', color: '#fb5b52' },
+          }}
         >
           <ExitToAppIcon sx={{ fontSize: 20 }} />
           Back to Home
-        </button>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

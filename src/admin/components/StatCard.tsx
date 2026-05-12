@@ -1,4 +1,5 @@
 import React from 'react';
+import { Box } from '@mui/material';
 
 interface StatCardProps {
   title: string;
@@ -9,33 +10,46 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
   return (
-    <div 
-      className="relative flex items-center gap-5 p-6 rounded-[20px] bg-white/70 backdrop-blur-lg border border-white/40 shadow-[0_8px_32px_rgba(31,38,135,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_40px_rgba(31,38,135,0.12)] cursor-pointer overflow-hidden group"
-    >
-      <div 
-        className="absolute -top-2.5 -right-2.5 w-20 h-20 rounded-full z-0 opacity-10"
-        style={{ backgroundColor: color }}
-      />
+    <Box sx={{
+      position: 'relative',
+      display: 'flex', alignItems: 'center', gap: 2.5,
+      p: 3, borderRadius: 4,
+      bgcolor: 'background.paper',
+      border: '1px solid', borderColor: 'divider',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      transition: 'all 0.3s',
+      cursor: 'pointer', overflow: 'hidden',
+      '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' },
+    }}>
+     
+      <Box sx={{
+        position: 'absolute', top: -10, right: -10,
+        width: 80, height: 80, borderRadius: '50%',
+        bgcolor: color, opacity: 0.08,
+      }} />
 
-      <div 
-        className="relative z-10 w-14 h-14 rounded-2xl flex items-center justify-center text-[28px]"
-        style={{ 
-          backgroundColor: `${color}15`,
-          color: color,
-          boxShadow: `0 4px 12px ${color}15`
-        }}
-      >
+     
+      <Box sx={{
+        position: 'relative', zIndex: 1,
+        width: 56, height: 56, borderRadius: 3,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 28, color,
+        bgcolor: `${color}18`,
+        boxShadow: `0 4px 12px ${color}20`,
+      }}>
         {icon}
-      </div>
-      <div className="relative z-10">
-        <h3 className="m-0 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+      </Box>
+
+      
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <Box sx={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: 'text.secondary' }}>
           {title}
-        </h3>
-        <p className="m-0 mt-1 text-2xl font-extrabold text-slate-800 tracking-tight">
+        </Box>
+        <Box sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary', mt: 0.5, letterSpacing: '-0.5px' }}>
           {value}
-        </p>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

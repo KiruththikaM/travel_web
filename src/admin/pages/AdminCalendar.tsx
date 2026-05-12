@@ -1,67 +1,79 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState, AppDispatch } from '../../store/Store';
+import { fetchBookings, updateBookingStatus } from '../../store/slices/bookingsSlice';
+import type { Booking } from '../../store/slices/bookingsSlice';
 import AdminLayout from '../components/AdminLayout';
+import { Box } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import type { CalendarEvent, CalendarEventType } from '../../types';
+import type { CalendarEventType } from '../../types';
+
+interface CalendarEvent {
+  type: CalendarEventType;
+  title: string;
+  guests: string;
+  location: string;
+  bookingId: string;
+  booking: Booking;
+}
 
 
-const EVENTS: Record<string, CalendarEvent[]> = {
-  '2026-05-01': [{ type: 'Confirmed', title: 'Elephant Jungle Sanctuary Half-Day Visit with Meal', guests: '4 Guests / 12 Max', location: 'Phuket, Thailand' }],
-  '2026-05-02': [{ type: 'Confirmed', title: 'Swiss Alps Hiking Tour', guests: '2 Guests / 10 Max', location: 'Zermatt, Switzerland' }],
-  '2026-05-06': [
-    { type: 'Confirmed', title: 'Elephant Jungle Sanctuary Half-Day Visit with Meal', guests: '4 Guests / 12 Max', location: 'Phuket, Thailand' },
-    { type: 'Pending', title: 'Grand Palace, Wat Pho, and Wat Arun Guided Tour', guests: '2 Guests / 24 Max', location: 'Bangkok, Thailand' },
-  ],
-  '2026-05-07': [{ type: 'Confirmed', title: 'Paradise Beach Sunset Cruise', guests: '6 Guests / 20 Max', location: 'Puducherry, India' }, { type: 'Confirmed', title: 'Eiffel Tower Night Tour', guests: '3 Guests / 15 Max', location: 'Paris, France' }],
-  '2026-05-08': [{ type: 'Confirmed', title: 'Elephant Jungle Sanctuary Half-Day Visit with Meal', guests: '4 Guests / 12 Max', location: 'Phuket, Thailand' }, { type: 'Pending', title: 'Grand Palace, Wat Pho, and Wat Arun Guided Tour', guests: '2 Guests / 24 Max', location: 'Bangkok, Thailand' }],
-  '2026-05-10': [{ type: 'Blocked', title: 'Maintenance Day', guests: '—', location: '—' }],
-  '2026-05-11': [{ type: 'Confirmed', title: 'Swiss Alps Hiking Tour', guests: '5 Guests / 10 Max', location: 'Zermatt, Switzerland' }],
-  '2026-05-15': [{ type: 'Confirmed', title: 'Paradise Beach Sunset Cruise', guests: '4 Guests / 20 Max', location: 'Puducherry, India' }, { type: 'Pending', title: 'Grand Palace, Wat Pho, and Wat Arun Guided Tour', guests: '3 Guests / 24 Max', location: 'Bangkok, Thailand' }],
+const TYPE_COLORS: Record<CalendarEventType, { pill: string; dot: string; cardBg: string; cardBorder: string; cardText: string }> = {
+  Confirmed: { pill: 'bg-teal-100 text-teal-700',    dot: 'bg-teal-500',   cardBg: 'bg-teal-50',   cardBorder: 'border-teal-200',   cardText: 'text-teal-700'   },
+  Pending:   { pill: 'bg-orange-100 text-orange-600', dot: 'bg-orange-400', cardBg: 'bg-orange-50', cardBorder: 'border-orange-200', cardText: 'text-orange-600' },
+  Blocked:   { pill: 'bg-red-100 text-red-600',       dot: 'bg-red-400',    cardBg: 'bg-red-50',    cardBorder: 'border-red-200',    cardText: 'text-red-600'    },
 };
 
-const TYPE_STYLE: Record<CalendarEventType, { pill: string; dot: string; badge: string }> = {
-  Confirmed: { pill: 'bg-teal-100 text-teal-700', dot: 'bg-teal-500', badge: 'bg-teal-50 border-teal-200 text-teal-700' },
-  Pending:   { pill: 'bg-orange-100 text-orange-600', dot: 'bg-orange-400', badge: 'bg-orange-50 border-orange-200 text-orange-600' },
-  Blocked:   { pill: 'bg-red-100 text-red-600', dot: 'bg-red-400', badge: 'bg-red-50 border-red-200 text-red-600' },
-};
-
-const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const DAYS   = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate();
-}
-function getFirstDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 1).getDay();
-}
+function getDaysInMonth(year: number, month: number) { return new Date(year, month + 1, 0).getDate(); }
+function getFirstDayOfMonth(year: number, month: number) { return new Date(year, month, 1).getDay(); }
 function pad(n: number) { return String(n).padStart(2, '0'); }
-function dateKey(year: number, month: number, day: number) {
-  return `${year}-${pad(month + 1)}-${pad(day)}`;
+function dateKey(year: number, month: number, day: number) { return `${year}-${pad(month + 1)}-${pad(day)}`; }
+
+function toEventType(status: Booking['status']): CalendarEventType {
+  if (status === 'Cancelled') return 'Blocked';
+  return status;
+}
+
+function buildEventsMap(bookings: Booking[]): Record<string, CalendarEvent[]> {
+  const map: Record<string, CalendarEvent[]> = {};
+  for (const b of bookings) {
+    const key = b.checkIn ? b.checkIn.slice(0, 10) : b.date.slice(0, 10);
+    if (!key) continue;
+    if (!map[key]) map[key] = [];
+    map[key].push({ type: toEventType(b.status), title: b.destinationName || b.destination, guests: `${b.guests} Guest${b.guests !== 1 ? 's' : ''}`, location: b.location || b.destination, bookingId: b.id, booking: b });
+  }
+  return map;
 }
 
 export default function AdminCalendar() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: bookings, status } = useSelector((state: RootState) => state.bookings);
+
   const today = new Date();
   const [current, setCurrent] = useState({ year: today.getFullYear(), month: today.getMonth() });
-  const [selectedDate, setSelectedDate] = useState(
-    `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
-  );
+  const [selectedDate, setSelectedDate] = useState(`${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`);
 
+  useEffect(() => {
+    if (status === 'idle' && bookings.length === 0) dispatch(fetchBookings());
+  }, [dispatch, status, bookings.length]);
+
+  const EVENTS = buildEventsMap(bookings);
   const { year, month } = current;
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfMonth(year, month);
+  const daysInMonth  = getDaysInMonth(year, month);
+  const firstDay     = getFirstDayOfMonth(year, month);
   const prevMonthDays = getDaysInMonth(year, month - 1 < 0 ? 11 : month - 1);
 
-  const goToToday = () => {
-    setCurrent({ year: today.getFullYear(), month: today.getMonth() });
-    setSelectedDate(`${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`);
-  };
-  const prevMonth = () => setCurrent(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
-  const nextMonth = () => setCurrent(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 });
+  const goToToday = () => { setCurrent({ year: today.getFullYear(), month: today.getMonth() }); setSelectedDate(`${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`); };
+  const prevMonth = () => setCurrent(c => c.month === 0  ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
+  const nextMonth = () => setCurrent(c => c.month === 11 ? { year: c.year + 1, month: 0  } : { ...c, month: c.month + 1 });
 
-  
   const cells: { day: number; curMonth: boolean; key: string }[] = [];
   for (let i = 0; i < firstDay; i++) {
     const day = prevMonthDays - firstDay + 1 + i;
@@ -69,9 +81,7 @@ export default function AdminCalendar() {
     const y = month - 1 < 0 ? year - 1 : year;
     cells.push({ day, curMonth: false, key: `${y}-${pad(m + 1)}-${pad(day)}` });
   }
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ day: d, curMonth: true, key: dateKey(year, month, d) });
-  }
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, curMonth: true, key: dateKey(year, month, d) });
   const remaining = 42 - cells.length;
   for (let d = 1; d <= remaining; d++) {
     const m = month + 1 > 11 ? 0 : month + 1;
@@ -80,142 +90,170 @@ export default function AdminCalendar() {
   }
 
   const selectedEvents = EVENTS[selectedDate] || [];
-  const selectedDay = parseInt(selectedDate.split('-')[2]);
-  const todayKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const selectedDay    = parseInt(selectedDate.split('-')[2]);
+  const todayKey       = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  const handleStatusChange = (bookingId: string, newStatus: Booking['status']) => {
+    dispatch(updateBookingStatus({ id: bookingId, status: newStatus }));
+  };
 
   return (
     <AdminLayout>
-     
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Calendar</h1>
-        <p className="text-slate-400 text-sm mt-0.5">Togo / Calendar</p>
-      </div>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ fontSize: 24, fontWeight: 900, color: 'text.primary', letterSpacing: '-0.5px' }}>Calendar</Box>
+        <Box sx={{ color: 'text.secondary', fontSize: 13, mt: 0.5 }}>Togo / Calendar</Box>
+      </Box>
 
-      <div className="flex gap-5 items-start">
-      
-        <div className="flex-1 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-         
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <span className="text-lg font-black text-slate-800">{MONTHS[month]} {year}</span>
-              <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
-                <ChevronLeftIcon sx={{ fontSize: 20 }} />
-              </button>
-              <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
-                <ChevronRightIcon sx={{ fontSize: 20 }} />
-              </button>
-              <button onClick={goToToday} className="text-sm font-bold text-red-500 hover:text-red-600 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors">
-                Today
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-teal-500 inline-block" />Confirmed</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />Pending</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />Blocked</span>
-            </div>
-          </div>
-
-          
-          <div className="grid grid-cols-7 border-b border-slate-100">
-            {DAYS.map(d => (
-              <div key={d} className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider py-2.5">
-                {d}
-              </div>
-            ))}
-          </div>
-
-         
-          <div className="grid grid-cols-7">
-            {cells.map((cell, idx) => {
-              const events = EVENTS[cell.key] || [];
-              const isToday = cell.key === todayKey;
-              const isSelected = cell.key === selectedDate;
-              const isLastRow = idx >= 35;
-
-              return (
-                <div
-                  key={cell.key + idx}
-                  onClick={() => setSelectedDate(cell.key)}
-                  className={`min-h-[90px] p-2 border-b border-r border-slate-100 cursor-pointer transition-colors
-                    ${isLastRow ? 'border-b-0' : ''}
-                    ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}
-                    ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/60'}
-                    ${!cell.curMonth ? 'opacity-40' : ''}
-                  `}
-                >
-                  <div className="flex justify-end mb-1">
-                    <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full
-                      ${isToday ? 'bg-red-500 text-white' : 'text-slate-600'}
-                    `}>
-                      {cell.day}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    {events.slice(0, 2).map((ev, i) => (
-                      <div key={i} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate ${TYPE_STYLE[ev.type].pill}`}>
-                        {ev.type} ({events.filter(e => e.type === ev.type).length})
-                      </div>
-                    ))}
-                    {events.length > 2 && (
-                      <div className="text-[10px] text-slate-400 font-semibold px-1">+{events.length - 2} more</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
 
        
-        <div className="w-72 flex-shrink-0">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-black text-slate-800 text-base">
-                Selected: {MONTHS[parseInt(selectedDate.split('-')[1]) - 1].slice(0, 3)} {selectedDay}
-              </span>
+        <Box sx={{ flex: 1, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+
+       
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ fontSize: 17, fontWeight: 900, color: 'text.primary' }}>{MONTHS[month]} {year}</Box>
+              <Box component="button" onClick={prevMonth} sx={{ p: 0.5, borderRadius: 1.5, border: 'none', bgcolor: 'transparent', cursor: 'pointer', color: 'text.disabled', display: 'flex', '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}>
+                <ChevronLeftIcon sx={{ fontSize: 20 }} />
+              </Box>
+              <Box component="button" onClick={nextMonth} sx={{ p: 0.5, borderRadius: 1.5, border: 'none', bgcolor: 'transparent', cursor: 'pointer', color: 'text.disabled', display: 'flex', '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}>
+                <ChevronRightIcon sx={{ fontSize: 20 }} />
+              </Box>
+              <Box component="button" onClick={goToToday} sx={{ fontSize: 13, fontWeight: 700, color: '#fb5b52', px: 1, py: 0.25, borderRadius: 1.5, border: 'none', bgcolor: 'transparent', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(251,91,82,0.08)' } }}>
+                Today
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 600, color: 'text.secondary' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#14b8a6' }} />Confirmed</Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#fb923c' }} />Pending</Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}><Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f87171' }} />Cancelled</Box>
+            </Box>
+          </Box>
+
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: '1px solid', borderColor: 'divider' }}>
+            {DAYS.map(d => (
+              <Box key={d} sx={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 1, py: 1.25 }}>
+                {d}
+              </Box>
+            ))}
+          </Box>
+
+         
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+            {cells.map((cell, idx) => {
+              const events    = EVENTS[cell.key] || [];
+              const isToday   = cell.key === todayKey;
+              const isSelected = cell.key === selectedDate;
+              const isLastRow  = idx >= 35;
+
+              return (
+                <Box
+                  key={cell.key + idx}
+                  onClick={() => setSelectedDate(cell.key)}
+                  sx={{
+                    minHeight: 90, p: 1,
+                    borderBottom: isLastRow ? 'none' : '1px solid',
+                    borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid',
+                    borderColor: 'divider',
+                    cursor: 'pointer',
+                    opacity: cell.curMonth ? 1 : 0.35,
+                    bgcolor: isSelected ? 'action.selected' : 'transparent',
+                    transition: 'background 0.15s',
+                    '&:hover': { bgcolor: isSelected ? 'action.selected' : 'action.hover' },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
+                    <Box sx={{
+                      fontSize: 13, fontWeight: 700,
+                      width: 28, height: 28,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: '50%',
+                      bgcolor: isToday ? '#fb5b52' : 'transparent',
+                      color: isToday ? '#fff' : 'text.primary',
+                    }}>
+                      {cell.day}
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                    {events.slice(0, 2).map((ev, i) => (
+                      <span key={i} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate ${TYPE_COLORS[ev.type].pill}`}>
+                        {ev.type} ({events.filter(e => e.type === ev.type).length})
+                      </span>
+                    ))}
+                    {events.length > 2 && (
+                      <Box sx={{ fontSize: 10, color: 'text.disabled', fontWeight: 600, px: 0.5 }}>+{events.length - 2} more</Box>
+                    )}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+
+      
+        <Box sx={{ width: 280, flexShrink: 0 }}>
+          <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', p: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+              <Box sx={{ fontWeight: 900, color: 'text.primary', fontSize: 15 }}>
+                {MONTHS[parseInt(selectedDate.split('-')[1]) - 1].slice(0, 3)} {selectedDay}
+              </Box>
               {selectedDate === todayKey && (
-                <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Today</span>
+                <Box sx={{ fontSize: 11, fontWeight: 700, color: '#fb5b52', bgcolor: 'rgba(251,91,82,0.08)', px: 1.5, py: 0.25, borderRadius: 10 }}>Today</Box>
               )}
-            </div>
+            </Box>
 
             {selectedEvents.length === 0 ? (
-              <div className="text-center py-10">
-                <CalendarTodayIcon sx={{ fontSize: 36, color: '#cbd5e1' }} />
-                <p className="text-slate-400 text-sm mt-2">No bookings on this day</p>
-              </div>
+              <Box sx={{ textAlign: 'center', py: 5 }}>
+                <CalendarTodayIcon sx={{ fontSize: 36, color: 'text.disabled' }} />
+                <Box sx={{ color: 'text.secondary', fontSize: 13, mt: 1 }}>No bookings on this day</Box>
+              </Box>
             ) : (
-              <div className="flex flex-col gap-4">
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {selectedEvents.map((ev, i) => (
-                  <div key={i} className={`rounded-xl border p-4 ${TYPE_STYLE[ev.type].badge}`}>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${TYPE_STYLE[ev.type].pill} px-2 py-0.5 rounded-full`}>
-                      {ev.type} Trip
+                  <span key={i} className={`rounded-xl border p-4 ${TYPE_COLORS[ev.type].cardBg} ${TYPE_COLORS[ev.type].cardBorder}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${TYPE_COLORS[ev.type].pill} px-2 py-0.5 rounded-full`}>
+                      {ev.booking.status} Trip
                     </span>
-                    <p className="font-bold text-slate-800 text-sm mt-2 leading-snug">{ev.title}</p>
-                    <div className="flex flex-col gap-1 mt-3">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <CalendarTodayIcon sx={{ fontSize: 13 }} />
-                        {selectedDate.replace(/-/g, '/')}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <PeopleIcon sx={{ fontSize: 13 }} />
-                        {ev.guests}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <LocationOnIcon sx={{ fontSize: 13 }} />
-                        {ev.location}
-                      </div>
-                    </div>
-                    <button className="mt-3 w-full border border-slate-200 rounded-lg py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-                      View Detail Booking
-                    </button>
-                  </div>
+                    <Box sx={{ fontWeight: 700, color: 'text.primary', fontSize: 13, mt: 1, lineHeight: 1.3 }}>{ev.title}</Box>
+                    <Box sx={{ fontSize: 11, color: 'text.secondary', mt: 0.5 }}>by {ev.booking.user}</Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, fontSize: 12, color: 'text.secondary' }}>
+                        <CalendarTodayIcon sx={{ fontSize: 13 }} />{ev.booking.checkIn} → {ev.booking.checkOut}
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, fontSize: 12, color: 'text.secondary' }}>
+                        <PeopleIcon sx={{ fontSize: 13 }} />{ev.guests}
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, fontSize: 12, color: 'text.secondary' }}>
+                        <LocationOnIcon sx={{ fontSize: 13 }} />{ev.location}
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.75, mt: 1.5 }}>
+                      {(['Confirmed', 'Pending', 'Cancelled'] as Booking['status'][]).map(s => (
+                        <Box
+                          key={s}
+                          component="button"
+                          onClick={() => handleStatusChange(ev.bookingId, s)}
+                          sx={{
+                            flex: 1, py: 0.75, fontSize: 10, fontWeight: 700, borderRadius: 1.5,
+                            border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
+                            bgcolor: ev.booking.status === s ? 'text.primary' : 'transparent',
+                            color: ev.booking.status === s ? 'background.paper' : 'text.secondary',
+                            borderColor: ev.booking.status === s ? 'text.primary' : 'divider',
+                            '&:hover': ev.booking.status !== s ? { bgcolor: 'action.hover' } : {},
+                          }}
+                        >
+                          {s}
+                        </Box>
+                      ))}
+                    </Box>
+                  </span>
                 ))}
-              </div>
+              </Box>
             )}
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
     </AdminLayout>
   );
 }
