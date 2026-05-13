@@ -1,5 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
-import { destinations } from '../components/Destinations'
+import { useSelector, useDispatch } from 'react-redux'
+import { useEffect } from 'react'
+import type { RootState, AppDispatch } from '../store/Store'
+import { fetchDestinations } from '../store/slices/destinationsSlice'
 import type { Destination } from '../types'
 import { Box, Container, Typography, Chip, Grid, Divider } from '@mui/material'
 import Button from '../components/Button'
@@ -17,7 +20,20 @@ const fallbackGallery = [
 
 function DestinationDetail() {
   const { id } = useParams()
+  const dispatch = useDispatch<AppDispatch>()
+  const { items: destinations, status } = useSelector((state: RootState) => state.destinations)
+
+  useEffect(() => {
+    if (status === 'idle' && destinations.length === 0) dispatch(fetchDestinations())
+  }, [dispatch, status, destinations.length])
+
   const dest: Destination | undefined = destinations.find(d => d.id === id)
+
+  if (status === 'loading' || destinations.length === 0) return (
+    <Box sx={{ pt: 16, textAlign: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Typography variant="h6" color="text.secondary">Loading...</Typography>
+    </Box>
+  )
 
   if (!dest) return (
     <Box sx={{ pt: 16, textAlign: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>

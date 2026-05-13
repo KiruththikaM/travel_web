@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import emailjs from '@emailjs/browser'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../store/Store'
 import { addContactMessage } from '../store/slices/messagesSlice'
-import { Box, Container, Typography, Grid, Alert } from '@mui/material'
+import { Box, Container, Typography, Grid, Alert, TextField, MenuItem, Select, FormControl, InputLabel, FormHelperText } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import PhoneIcon from '@mui/icons-material/Phone'
 import EmailIcon from '@mui/icons-material/Email'
@@ -14,61 +14,74 @@ import TelegramIcon from '@mui/icons-material/Telegram'
 import LinkedInIcon from '@mui/icons-material/LinkedIn'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
+import { useState } from 'react'
 
 function Contact() {
   const dispatch = useDispatch<AppDispatch>()
   const destinations = useSelector((state: RootState) => state.destinations.items)
-  
+
   const [sent, setSent] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', destination: '', message: '' })
+  const [serverError, setServerError] = useState('')
 
   useEffect(() => {
     if (destinations.length === 0) {
-      import('../data/db.json').then(() => {
-        
-      })
+      import('../data/db.json').then(() => {})
     }
   }, [destinations.length])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  const contactSchema = Yup.object({
+    name: Yup.string()
+      .matches(/^[a-zA-Z\s]+$/, 'Name must contain only letters.')
+      .test('not-spaces-only', 'Name must contain at least one letter.', val => !!val && /[a-zA-Z]/.test(val))
+      .max(50, 'Name must not exceed 50 characters.')
+      .required('Name is required.'),
+    email: Yup.string()
+      .email('Please enter a valid email address.')
+      .required('Email is required.'),
+    phone: Yup.string()
+      .matches(/^\+?[0-9\s\-()]{7,15}$/, 'Please enter a valid phone number.')
+      .nullable(),
+    destination: Yup.string(),
+    message: Yup.string()
+      .trim()
+      .min(10, 'Message must be at least 10 characters.')
+      .max(1000, 'Message must not exceed 1000 characters.')
+      .required('Message is required.'),
+  })
 
-    
-    dispatch(addContactMessage({
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      destination: form.destination,
-      message: form.message,
-    }))
-
-    
-    emailjs.send('service_zlxwif9', 'template_doc6s9v', {
-      title: 'New Contact Message',
-      name: form.name,
-      email: form.email,
-      phone: form.phone || 'Not provided',
-      destination: form.destination || 'Not specified',
-      message: form.message,
-    }, 'UZdscZBUE52_q_Tjs').then(() => {
-      setSent(true)
-      setForm({ name: '', email: '', phone: '', destination: '', message: '' })
-      setLoading(false)
-    }).catch((err) => {
-      console.error('EmailJS error:', err)
-     
-      setSent(true)
-      setForm({ name: '', email: '', phone: '', destination: '', message: '' })
-      setLoading(false)
-    })
-  }
-
-  const inputClass =
-    'w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none focus:border-red-400 bg-white text-gray-800 placeholder-gray-400'
+  const formik = useFormik({
+    initialValues: { name: '', email: '', phone: '', destination: '', message: '' },
+    validationSchema: contactSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: (values, { resetForm }) => {
+      setServerError('')
+      dispatch(addContactMessage({
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        destination: values.destination,
+        message: values.message,
+      }))
+      emailjs.send('service_zlxwif9', 'template_doc6s9v', {
+        title: 'New Contact Message',
+        name: values.name,
+        email: values.email,
+        phone: values.phone || 'Not provided',
+        destination: values.destination || 'Not specified',
+        message: values.message,
+      }, 'UZdscZBUE52_q_Tjs').then(() => {
+        setSent(true)
+        resetForm()
+      }).catch((err) => {
+        console.error('EmailJS error:', err)
+        setSent(true)
+        resetForm()
+      })
+    },
+  })
 
   return (
     <Box sx={{
@@ -244,69 +257,80 @@ function Contact() {
                 </Box>
               )}
                           
-              {error && ( 
-                <Alert severity="error" sx={{ borderRadius: 2, mb: 3 }}>
-                  {error} 
-                </Alert>  
-              )}           
-                          
-              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              
+              {serverError && (
+                <Alert severity="error" sx={{ borderRadius: 2, mb: 3 }}>{serverError}</Alert>
+              )}
+
+              <form onSubmit={formik.handleSubmit} className="flex flex-col gap-3">
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    className={inputClass}
-                    placeholder="Your Name"
-                    value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
-                    required
+                  <TextField
+                    fullWidth size="small" label="Your Name"
+                    name="name" value={formik.values.name}
+                    onChange={formik.handleChange} onBlur={formik.handleBlur}
+                    error={formik.touched.name && !!formik.errors.name}
+                    helperText={formik.touched.name && formik.errors.name}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                   />
-                  <input 
-                    className={inputClass}
-                    placeholder="example@gmail.com"
-                    type="email"
-                    value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
-                    required
+                  <TextField
+                    fullWidth size="small" label="Email Address" type="email"
+                    name="email" value={formik.values.email}
+                    onChange={formik.handleChange} onBlur={formik.handleBlur}
+                    error={formik.touched.email && !!formik.errors.email}
+                    helperText={formik.touched.email && formik.errors.email}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                   />
                 </div>
 
-                
-                <input
-                  className={inputClass}
-                  placeholder="Your Contact Number"
-                  value={form.phone}
-                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                <TextField
+                  fullWidth size="small" label="Contact Number (Optional)"
+                  name="phone" value={formik.values.phone}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  error={formik.touched.phone && !!formik.errors.phone}
+                  helperText={formik.touched.phone && formik.errors.phone}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                 />
 
-                
-                <select
-                  className={inputClass}
-                  value={form.destination}
-                  onChange={e => setForm({ ...form, destination: e.target.value })}
+                <FormControl
+                  fullWidth size="small"
+                  error={formik.touched.destination && !!formik.errors.destination}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                 >
-                  <option value="">Select Destination (Optional)</option>
-                  {destinations.map(dest => (
-                    <option key={dest.id} value={dest.name}>{dest.name} — {dest.location}</option>
-                  ))}
-                </select>
+                  <InputLabel>Select Destination (Optional)</InputLabel>
+                  <Select
+                    name="destination"
+                    value={formik.values.destination}
+                    label="Select Destination (Optional)"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                  >
+                    <MenuItem value=""><em>None</em></MenuItem>
+                    {destinations.map(dest => (
+                      <MenuItem key={dest.id} value={dest.name}>{dest.name} — {dest.location}</MenuItem>
+                    ))}
+                  </Select>
+                  {formik.touched.destination && formik.errors.destination && (
+                    <FormHelperText>{formik.errors.destination}</FormHelperText>
+                  )}
+                </FormControl>
 
-            
-                <textarea 
-                  className={`${inputClass} resize-none`}
-                  placeholder="Your Message Here"
-                  rows={5}
-                  required
-                  value={form.message}
-                  onChange={e => setForm({ ...form, message: e.target.value })}
+                <TextField
+                  fullWidth size="small" label="Your Message" multiline rows={5}
+                  placeholder="Tell us how we can help..."
+                  name="message" value={formik.values.message}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  error={formik.touched.message && !!formik.errors.message}
+                  helperText={formik.touched.message && formik.errors.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
                 />
 
                 <div>
-                  <button 
+                  <button
                     type="submit"
-                    disabled={loading}
+                    disabled={formik.isSubmitting}
                     className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-2.5 rounded text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'SENDING...' : 'SUBMIT'}
+                    {formik.isSubmitting ? 'SENDING...' : 'SUBMIT'}
                   </button>
                 </div>
               </form>

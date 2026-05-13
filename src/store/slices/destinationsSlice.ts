@@ -4,9 +4,13 @@ export interface Destination {
   id: string;
   name: string;
   location: string;
+  tagline: string;
+  description: string;
+  category: string;
   price: number;
   rating: number;
   image: string;
+  gallery: string[];
 }
 
 interface DestinationsState {

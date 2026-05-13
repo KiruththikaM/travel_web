@@ -1,108 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import type { RootState, AppDispatch } from '../store/Store'
+import { fetchDestinations } from '../store/slices/destinationsSlice'
 import { Card, CardMedia, CardContent, CardActionArea, Chip, Rating, Typography, Box, Container } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import Button from './Button'
 import type { Destination } from '../types'
 
-export const destinations: Destination[] = [
-  {
-    id: 'sigiriya',
-    name: 'Sigiriya',
-    tagline: 'The Lion Rock Fortress',
-    description: 'A UNESCO World Heritage Site rising 200m above the jungle — ancient frescoes, water gardens, and breathtaking views.',
-    image: 'https://t3.ftcdn.net/jpg/04/72/15/84/360_F_472158460_EEZxYRnfbPVQHR1NGjkvgZKfiSsWnCri.jpg',
-    category: 'Heritage',
-    rating: 4.9,
-    price: 120,
-    gallery: [
-      'https://images.unsplash.com/photo-1601823984263-2f75fc56cde2?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1560703650-ef3e0f254ae0?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1566140967404-b8b3932483f5?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1584810359583-96fc3448beaa?w=800&auto=format&fit=crop',
-    ]
-  },
-  {
-    id: 'ella',
-    name: 'Ella',
-    tagline: 'Hill Country Paradise',
-    description: 'Misty mountains, tea plantations, the iconic Nine Arch Bridge, and the most scenic train ride in the world.',
-    image: 'https://suhadabliss.com/wp-content/uploads/2025/06/Nine-Arch.jpg',
-    category: 'Nature',
-    rating: 4.8,
-    price: 95,
-    gallery: [
-      'https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1546961342-ea5f62d5a27b?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1588421357574-87938a86fa28?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop',
-    ]
-  },
-  {
-    id: 'mirissa',
-    name: 'Mirissa',
-    tagline: 'Whale Watching Capital',
-    description: 'Pristine crescent beach, whale watching tours, surf breaks, and stunning sunsets over the Indian Ocean.',
-    image: 'https://images.squarespace-cdn.com/content/v1/596b2969d2b85786e6892853/1531738844396-H040L4I7S80ZGQV196K4/DJI_0780.jpg?format=1500w',
-    category: 'Beach',
-    rating: 4.7,
-    price: 80,
-    gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&auto=format&fit=crop',
-    ]
-  },
-  {
-    id: 'kandy',
-    name: 'Kandy',
-    tagline: 'Cultural Capital',
-    description: 'Home to the sacred Temple of the Tooth Relic, surrounded by misty hills and the beautiful Kandy Lake.',
-    image: 'https://www.srilankainstyle.com/storage/app/media/uploaded-files/7-reasons-to-visit-kandy-in-sri-lanka-slider-1.jpg',
-    category: 'Culture',
-    rating: 4.8,
-    price: 110,
-    gallery: [
-      'https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1545389336-cf090694435e?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=800&auto=format&fit=crop',
-    ]
-  },
-  {
-    id: 'galle',
-    name: 'Galle Fort',
-    tagline: 'Colonial Charm',
-    description: 'A 16th-century Dutch fort with cobblestone streets, boutique cafes, art galleries, and ocean views.',
-    image: 'https://do6raq9h04ex.cloudfront.net/sites/8/2025/08/Why-Galle-Fort-Is-a-Must-Visit-Day-Trip-from-Unawatuna-1050x700-1.jpg',
-    category: 'Heritage',
-    rating: 4.7,
-    price: 75,
-    gallery: [
-      'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&auto=format&fit=crop',
-    ]
-  },
-  {
-    id: 'yala',
-    name: 'Yala National Park',
-    tagline: 'Wildlife Safari',
-    description: 'The highest density of leopards in the world, plus elephants, crocodiles, and hundreds of bird species.',
-    image: 'https://www.andbeyond.com/wp-content/uploads/sites/5/sri-lanka-leopard-asian.jpg',
-    category: 'Wildlife',
-    rating: 4.9,
-    price: 150,
-    gallery: [
-      'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1549366021-9f761d450615?w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=800&auto=format&fit=crop',
-    ]
-  },
-]
 
 const categoryColors: Record<string, 'success' | 'primary' | 'info' | 'warning' | 'secondary'> = {
   Heritage: 'warning',
@@ -113,7 +18,13 @@ const categoryColors: Record<string, 'success' | 'primary' | 'info' | 'warning' 
 }
 
 function Destinations() {
+  const dispatch = useDispatch<AppDispatch>()
+  const { items: destinations, status } = useSelector((state: RootState) => state.destinations)
   const [hover, setHover] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (status === 'idle' && destinations.length === 0) dispatch(fetchDestinations())
+  }, [dispatch, status, destinations.length])
 
   return (
     <Box sx={{

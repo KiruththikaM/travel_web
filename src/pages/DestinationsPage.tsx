@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { destinations } from '../components/Destinations'
+import { useSelector, useDispatch } from 'react-redux'
+import type { RootState, AppDispatch } from '../store/Store'
+import { fetchDestinations } from '../store/slices/destinationsSlice'
 import {
   Box, Container, Typography, Grid, Card, CardMedia, CardContent,
   CardActionArea, Chip, Rating, ToggleButtonGroup, ToggleButton,
@@ -25,9 +27,16 @@ const sortOptions = [
   { label: 'Name: A–Z', value: 'name_asc' },
 ]
 
-const maxPrice = Math.max(...destinations.map(d => d.price ?? 0))
-
 function DestinationsPage() {
+  const dispatch = useDispatch<AppDispatch>()
+  const { items: destinations, status } = useSelector((state: RootState) => state.destinations)
+
+  useEffect(() => {
+    if (status === 'idle' && destinations.length === 0) dispatch(fetchDestinations())
+  }, [dispatch, status, destinations.length])
+
+  const maxPrice = useMemo(() => Math.max(...(destinations.length ? destinations.map(d => d.price ?? 0) : [5000])), [destinations])
+
   const [category, setCategory] = useState('All')
   const [search, setSearch] = useState('')
   const [minRating, setMinRating] = useState(0)

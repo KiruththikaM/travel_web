@@ -22,10 +22,10 @@ interface CalendarEvent {
 }
 
 
-const TYPE_COLORS: Record<CalendarEventType, { pill: string; dot: string; cardBg: string; cardBorder: string; cardText: string }> = {
-  Confirmed: { pill: 'bg-teal-100 text-teal-700',    dot: 'bg-teal-500',   cardBg: 'bg-teal-50',   cardBorder: 'border-teal-200',   cardText: 'text-teal-700'   },
-  Pending:   { pill: 'bg-orange-100 text-orange-600', dot: 'bg-orange-400', cardBg: 'bg-orange-50', cardBorder: 'border-orange-200', cardText: 'text-orange-600' },
-  Blocked:   { pill: 'bg-red-100 text-red-600',       dot: 'bg-red-400',    cardBg: 'bg-red-50',    cardBorder: 'border-red-200',    cardText: 'text-red-600'    },
+const TYPE_COLORS: Record<CalendarEventType, { pill: string; dot: string; cardBg: string; cardBorder: string; badgeBg: string; badgeText: string }> = {
+  Confirmed: { pill: 'bg-teal-100 text-teal-700',    dot: 'bg-teal-500',   cardBg: 'rgba(20,184,166,0.12)',  cardBorder: 'rgba(20,184,166,0.35)',  badgeBg: 'rgba(20,184,166,0.18)',  badgeText: '#0d9488' },
+  Pending:   { pill: 'bg-orange-100 text-orange-600', dot: 'bg-orange-400', cardBg: 'rgba(251,146,60,0.12)', cardBorder: 'rgba(251,146,60,0.35)', badgeBg: 'rgba(251,146,60,0.18)', badgeText: '#ea580c' },
+  Blocked:   { pill: 'bg-red-100 text-red-600',       dot: 'bg-red-400',    cardBg: 'rgba(248,113,113,0.12)', cardBorder: 'rgba(248,113,113,0.35)', badgeBg: 'rgba(248,113,113,0.18)', badgeText: '#dc2626' },
 };
 
 const DAYS   = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -211,11 +211,22 @@ export default function AdminCalendar() {
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {selectedEvents.map((ev, i) => (
-                  <span key={i} className={`rounded-xl border p-4 ${TYPE_COLORS[ev.type].cardBg} ${TYPE_COLORS[ev.type].cardBorder}`}>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${TYPE_COLORS[ev.type].pill} px-2 py-0.5 rounded-full`}>
+                  <Box key={i} sx={{
+                    borderRadius: 3, border: '1px solid',
+                    borderColor: TYPE_COLORS[ev.type].cardBorder,
+                    bgcolor: TYPE_COLORS[ev.type].cardBg,
+                    p: 2,
+                  }}>
+                    <Box sx={{
+                      display: 'inline-block', fontSize: 10, fontWeight: 900,
+                      textTransform: 'uppercase', letterSpacing: 1.5,
+                      bgcolor: TYPE_COLORS[ev.type].badgeBg,
+                      color: TYPE_COLORS[ev.type].badgeText,
+                      px: 1.5, py: 0.5, borderRadius: 10, mb: 1,
+                    }}>
                       {ev.booking.status} Trip
-                    </span>
-                    <Box sx={{ fontWeight: 700, color: 'text.primary', fontSize: 13, mt: 1, lineHeight: 1.3 }}>{ev.title}</Box>
+                    </Box>
+                    <Box sx={{ fontWeight: 700, color: 'text.primary', fontSize: 13, lineHeight: 1.3 }}>{ev.title}</Box>
                     <Box sx={{ fontSize: 11, color: 'text.secondary', mt: 0.5 }}>by {ev.booking.user}</Box>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 1.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, fontSize: 12, color: 'text.secondary' }}>
@@ -247,7 +258,7 @@ export default function AdminCalendar() {
                         </Box>
                       ))}
                     </Box>
-                  </span>
+                  </Box>
                 ))}
               </Box>
             )}

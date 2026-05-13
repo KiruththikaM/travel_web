@@ -8,6 +8,8 @@ import Button from "../components/Button";
 import type { TransitionProps } from '@mui/material/transitions';
 import CloseIcon from '@mui/icons-material/Close';
 import ExploreIcon from '@mui/icons-material/Explore';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 
 const Transition = forwardRef(function Transition(
   props: TransitionProps & {
@@ -19,58 +21,88 @@ const Transition = forwardRef(function Transition(
 });
 function Login({ open, handleClose }: { open: boolean, handleClose: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
   const dispatch = useDispatch();
 
-  const handleSubmit = () => {
-    setError("");
+  const loginSchema = Yup.object({
+    email: Yup.string()
+      .email("Please enter a valid email address.")
+      .required("Email is required."),
+    password: Yup.string()
+      .min(6, "Password must be at least 6 characters.")
+      .max(8, "Password must not exceed 8 characters.")
+      .required("Password is required."),
+  });
 
-    import('../data/db.json').then((db) => {
-      const adminCreds = db.adminCredentials;
-      if (email === adminCreds.email && password === adminCreds.password) {
-        dispatch(login({ name: adminCreds.name, email: adminCreds.email, role: 'admin' }));
-        window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Welcome, Admin!", severity: "success" } }));
-        handleClose();
-        return;
-      }
+  const registerSchema = Yup.object({
+    name: Yup.string()
+      .matches(/^[a-zA-Z\s]+$/, "Name must contain only letters.")
+      .test("not-spaces-only", "Name must contain at least one letter.", (val) => !!val && /[a-zA-Z]/.test(val))
+      .max(50, "Name must not exceed 50 characters.")
+      .required("Full name is required."),
+    email: Yup.string()
+      .email("Please enter a valid email address.")
+      .required("Email is required."),
+    password: Yup.string()
+      .min(6, "Password must be at least 6 characters.")
+      .max(8, "Password must not exceed 8 characters.")
+      .required("Password is required."),
+  });
 
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      if (isLogin) {
-        const user = users.find((u: User) => u.email === email && u.password === password);
-        if (user) {
-          dispatch(login({ ...user, role: 'user' }));
-          window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Login successful!", severity: "success" } }));
-          handleClose();
-        } else {
-          setError("Invalid email or password. Please register if you don't have an account.");
+  const formik = useFormik({
+    initialValues: { name: "", email: "", password: "" },
+    validationSchema: isLogin ? loginSchema : registerSchema,
+    validateOnChange: true,
+    validateOnBlur: true,
+    onSubmit: (values) => {
+      setServerError("");
+      import('../data/db.json').then((db) => {
+        const adminCreds = db.adminCredentials;
+        if (values.email === adminCreds.email && values.password === adminCreds.password) {
+          dispatch(login({ name: adminCreds.name, email: adminCreds.email, role: 'admin' }));
+          window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Welcome, Admin!", severity: "success" } }));
+          handleResetAndClose();
+          return;
         }
-      } else {
-        if (!name || !email || !password) { setError("All fields are required."); return; }
-        const userExists = users.some((u: User) => u.email === email);
-        if (userExists) {
-          setError("User already exists with this email. Please login.");
+
+        const users = JSON.parse(localStorage.getItem("users") || "[]");
+        if (isLogin) {
+          const user = users.find((u: User) => u.email === values.email && u.password === values.password);
+          if (user) {
+            dispatch(login({ ...user, role: 'user' }));
+            window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Login successful!", severity: "success" } }));
+            handleResetAndClose();
+          } else {
+            setServerError("Invalid email or password. Please register if you don't have an account.");
+          }
         } else {
-          users.push({ name, email, password, role: 'user' });
-          localStorage.setItem("users", JSON.stringify(users));
-          emailjs.send("service_zlxwif9", "template_xl9ewvo", { title: "Welcome Request", user_name: name, user_email: email, name: "VisitSriLanka System", email }, "UZdscZBUE52_q_Tjs")
-            .then(() => console.log("Welcome email sent"))
-            .catch((err) => console.error("Failed to send welcome email:", err));
-          window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Registration successful! A welcome email has been sent.", severity: "success" } }));
-          setIsLogin(true);
+          const userExists = users.some((u: User) => u.email === values.email);
+          if (userExists) {
+            setServerError("User already exists with this email. Please login.");
+          } else {
+            users.push({ name: values.name, email: values.email, password: values.password, role: 'user' });
+            localStorage.setItem("users", JSON.stringify(users));
+            emailjs.send("service_zlxwif9", "template_xl9ewvo", { title: "Welcome Request", user_name: values.name, user_email: values.email, name: "VisitSriLanka System", email: values.email }, "UZdscZBUE52_q_Tjs")
+              .then(() => console.log("Welcome email sent"))
+              .catch((err) => console.error("Failed to send welcome email:", err));
+            window.dispatchEvent(new CustomEvent("showToast", { detail: { message: "Registration successful! A welcome email has been sent.", severity: "success" } }));
+            switchMode(true);
+          }
         }
-      }
-    });
+      });
+    },
+  });
+
+  const switchMode = (toLogin: boolean) => {
+    setIsLogin(toLogin);
+    setServerError("");
+    formik.resetForm();
   };
 
   const handleResetAndClose = () => {
+    setServerError("");
+    formik.resetForm();
     setIsLogin(true);
-    setEmail("");
-    setPassword("");
-    setName("");
-    setError("");
     handleClose();
   };
 
@@ -106,75 +138,79 @@ function Login({ open, handleClose }: { open: boolean, handleClose: () => void }
       </DialogTitle>
 
       <DialogContent>
-        <Stack spacing={2.5} sx={{ mt: 1 }}>
-          {error && (
-            <Typography variant="body2" sx={{ bgcolor: '#fef2f2', color: '#ef4444', p: 1.5, borderRadius: 2, textAlign: 'center', fontWeight: 500 }}>
-              {error}
-            </Typography>
-          )}
-          {!isLogin && (
-            <TextField 
-              label="Full Name" 
-              fullWidth 
+        <Box component="form" onSubmit={formik.handleSubmit}>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            {serverError && (
+              <Typography variant="body2" sx={{ bgcolor: '#fef2f2', color: '#ef4444', p: 1.5, borderRadius: 2, textAlign: 'center', fontWeight: 500 }}>
+                {serverError}
+              </Typography>
+            )}
+            {!isLogin && (
+              <TextField
+                label="Full Name"
+                fullWidth
+                variant="outlined"
+                name="name"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.name && !!formik.errors.name}
+                helperText={formik.touched.name && formik.errors.name}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            )}
+            <TextField
+              label="Email Address"
+              fullWidth
               variant="outlined"
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
+              name="email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.email && !!formik.errors.email}
+              helperText={formik.touched.email && formik.errors.email}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
-          )}
-          <TextField 
-            label="Email Address" 
-            type="email" 
-            fullWidth 
-            variant="outlined"
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-          />
-          <TextField 
-            label="Password" 
-            type="password" 
-            fullWidth 
-            variant="outlined"
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-          />
+            <TextField
+              label="Password"
+              type="password"
+              fullWidth
+              variant="outlined"
+              name="password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.password && !!formik.errors.password}
+              helperText={formik.touched.password && formik.errors.password}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
 
-          <Button 
-            variant="contained" 
-            onClick={handleSubmit}
-            size="large"
-            disableElevation
-            pill
-            sx={{ 
-              mt: 2, 
-              py: 1.5,
-              fontSize: '1rem',
-              transition: 'all 0.2s'
-            }}
-          >
-            {isLogin ? "Sign In" : "Create Account"}
-          </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disableElevation
+              pill
+              sx={{ mt: 2, py: 1.5, fontSize: '1rem', transition: 'all 0.2s' }}
+            >
+              {isLogin ? "Sign In" : "Create Account"}
+            </Button>
 
-          <Box sx={{ textAlign: 'center', mt: 1, pb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <Button 
-                variant="text" 
-                onClick={() => { setIsLogin(!isLogin); setError(""); }}
-                disableRipple
-                sx={{ 
-                  p: 0,
-                  minWidth: 'auto',
-                  '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' }
-                }}
-              >
-                {isLogin ? "Sign up" : "Log in"}
-              </Button>
-            </Typography>
-          </Box>
-        </Stack>
+            <Box sx={{ textAlign: 'center', mt: 1, pb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                <Button
+                  variant="text"
+                  onClick={() => switchMode(!isLogin)}
+                  disableRipple
+                  sx={{ p: 0, minWidth: 'auto', '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                >
+                  {isLogin ? "Sign up" : "Log in"}
+                </Button>
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
       </DialogContent>
     </Dialog>
   );

@@ -8,12 +8,14 @@ import {
 import AdminLayout from '../components/AdminLayout';
 import AdminTable from '../components/AdminTable';
 import { Box } from '@mui/material';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Rating } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Rating, MenuItem, Select } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 
 const ratingLabels: Record<number, string> = {
   0.5: 'Useless', 1: 'Useless+', 1.5: 'Poor', 2: 'Poor+',
@@ -58,21 +60,85 @@ const ManageDestinations = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', location: '', price: '', rating: '4.5', image: '' });
 
   useEffect(() => {
     if (status === 'idle' && destinations.length === 0) dispatch(fetchDestinations());
   }, [dispatch, status, destinations.length]);
 
+  const urlSchema = Yup.string()
+    .url('Must be a valid URL (e.g. https://...)')
+    .nullable();
+
+  const packageSchema = Yup.object({
+    name: Yup.string().trim()
+      .matches(/^[a-zA-Z0-9\s,.\-']+$/, 'Name must not contain special characters.')
+      .test('not-special-only', 'Name must contain at least one letter or number.', val => !!val && /[a-zA-Z0-9]/.test(val))
+      .min(2, 'Name must be at least 2 characters.').max(100, 'Name too long.').required('Package name is required.'),
+    location: Yup.string().trim()
+      .matches(/^[a-zA-Z0-9\s,.\-']+$/, 'Location must not contain special characters.')
+      .test('not-special-only', 'Location must contain at least one letter or number.', val => !!val && /[a-zA-Z0-9]/.test(val))
+      .min(2, 'Location must be at least 2 characters.').max(100, 'Location too long.').required('Location is required.'),
+    tagline: Yup.string().trim()
+      .matches(/^[a-zA-Z0-9\s,.\-'!]+$/, 'Tagline must not contain special characters.')
+      .test('not-special-only', 'Tagline must contain at least one letter or number.', val => !!val && /[a-zA-Z0-9]/.test(val))
+      .min(3, 'Tagline must be at least 3 characters.').max(120, 'Tagline too long.').required('Tagline is required.'),
+    description: Yup.string().trim()
+      .test('not-special-only', 'Description must contain meaningful text.', val => !!val && /[a-zA-Z0-9]/.test(val))
+      .min(10, 'Description must be at least 10 characters.').max(1000, 'Description too long.').required('Description is required.'),
+    category: Yup.string().required('Category is required.'),
+    price: Yup.number().typeError('Price must be a number.').min(1, 'Price must be at least $1.').required('Price is required.'),
+    rating: Yup.number().min(0.5).max(5).required(),
+    image: Yup.string().url('Must be a valid URL (e.g. https://...)').required('Main image URL is required.'),
+    gallery0: urlSchema, gallery1: urlSchema, gallery2: urlSchema, gallery3: urlSchema, gallery4: urlSchema,
+  });
+
+  const emptyValues = {
+    name: '', location: '', tagline: '', description: '', category: 'Heritage',
+    price: '' as unknown as number, rating: 4.5, image: '',
+    gallery0: '', gallery1: '', gallery2: '', gallery3: '', gallery4: '',
+  };
+
+  const formik = useFormik({
+    initialValues: emptyValues,
+    validationSchema: packageSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: (values, { resetForm }) => {
+      const gallery = [values.gallery0, values.gallery1, values.gallery2, values.gallery3, values.gallery4].filter(Boolean) as string[];
+      const base = {
+        name: values.name, location: values.location, tagline: values.tagline,
+        description: values.description, category: values.category,
+        price: Number(values.price), rating: values.rating,
+        image: values.image, gallery,
+      };
+      if (isEditMode && editingId) {
+        dispatch(updateDestination({ ...base, id: editingId }));
+      } else {
+        dispatch(addDestination({ ...base, id: `D${Date.now()}` }));
+      }
+      setShowModal(false);
+      resetForm();
+    },
+  });
+
   const handleOpenAdd = () => {
     setIsEditMode(false); setEditingId(null);
-    setFormData({ name: '', location: '', price: '', rating: '4.5', image: '' });
+    formik.resetForm({ values: emptyValues });
     setShowModal(true);
   };
 
   const handleOpenEdit = (item: Destination) => {
     setIsEditMode(true); setEditingId(item.id);
-    setFormData({ name: item.name, location: item.location, price: item.price.toString(), rating: item.rating.toString(), image: item.image });
+    formik.resetForm({
+      values: {
+        name: item.name, location: item.location, tagline: item.tagline,
+        description: item.description, category: item.category,
+        price: item.price, rating: item.rating, image: item.image,
+        gallery0: item.gallery[0] ?? '', gallery1: item.gallery[1] ?? '',
+        gallery2: item.gallery[2] ?? '', gallery3: item.gallery[3] ?? '',
+        gallery4: item.gallery[4] ?? '',
+      },
+    });
     setShowModal(true);
   };
 
@@ -83,16 +149,9 @@ const ManageDestinations = () => {
     setDeleteConfirmOpen(false); setItemToDelete(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isEditMode && editingId) {
-      dispatch(updateDestination({ ...formData, id: editingId, price: Number(formData.price), rating: Number(formData.rating) }));
-    } else {
-      dispatch(addDestination({ ...formData, id: `D${Date.now()}`, price: Number(formData.price), rating: Number(formData.rating) }));
-    }
-    setShowModal(false);
-    setFormData({ name: '', location: '', price: '', rating: '4.5', image: '' });
-  };
+ 
+  const fe = (field: keyof typeof formik.values) =>
+    formik.touched[field] && formik.errors[field] ? String(formik.errors[field]) : '';
 
   const columns = [
     {
@@ -104,6 +163,14 @@ const ManageDestinations = () => {
             <Box sx={{ fontWeight: 700, color: 'text.primary', fontSize: 14 }}>{item.name}</Box>
             <Box sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>{item.location}</Box>
           </Box>
+        </Box>
+      ),
+    },
+    {
+      header: 'Category', accessor: 'category',
+      render: (item: Destination) => (
+        <Box sx={{ px: 1.5, py: 0.5, borderRadius: 2, bgcolor: 'rgba(99,102,241,0.1)', color: '#6366f1', fontSize: 12, fontWeight: 700, display: 'inline-block' }}>
+          {item.category}
         </Box>
       ),
     },
@@ -175,7 +242,7 @@ const ManageDestinations = () => {
       <AdminTable title="Package Inventory" columns={columns} data={destinations} />
 
       
-      <Dialog open={showModal} onClose={() => setShowModal(false)} PaperProps={{ sx: { borderRadius: 4, maxWidth: 500, width: '100%' } }}>
+      <Dialog open={showModal} onClose={() => setShowModal(false)} PaperProps={{ sx: { borderRadius: 4, maxWidth: 600, width: '100%', maxHeight: '90vh' } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 3, pt: 3, pb: 1 }}>
           <Box sx={{ fontSize: 22, fontWeight: 900, color: 'text.primary' }}>
             {isEditMode ? 'Edit Package' : 'Add New Package'}
@@ -192,28 +259,91 @@ const ManageDestinations = () => {
           <Box sx={{ color: 'text.secondary', mb: 3, fontSize: 14 }}>
             {isEditMode ? 'Update the details of the travel destination.' : 'Fill in the details to create a new travel destination.'}
           </Box>
-          <Box component="form" id="destination-form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
-            <Box>
-              <FormLabel>Package Name</FormLabel>
-              <Box component="input" type="text" required placeholder="e.g. Tropical Maldives Getaway" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })} sx={inputSx} />
-            </Box>
-            <Box>
-              <FormLabel>Location</FormLabel>
-              <Box component="input" type="text" required placeholder="e.g. Male, Maldives" value={formData.location} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, location: e.target.value })} sx={inputSx} />
-            </Box>
+          <Box component="form" id="destination-form" onSubmit={formik.handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <Box>
+                <FormLabel>Package Name</FormLabel>
+                <Box component="input" type="text" placeholder="e.g. Tropical Maldives Getaway"
+                  name="name" value={formik.values.name}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  sx={{ ...inputSx, borderColor: fe('name') ? '#ef4444' : 'divider' }} />
+                {fe('name') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('name')}</Box>}
+              </Box>
+              <Box>
+                <FormLabel>Location</FormLabel>
+                <Box component="input" type="text" placeholder="e.g. Male, Maldives"
+                  name="location" value={formik.values.location}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  sx={{ ...inputSx, borderColor: fe('location') ? '#ef4444' : 'divider' }} />
+                {fe('location') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('location')}</Box>}
+              </Box>
+            </Box>
+            <Box>
+              <FormLabel>Tagline</FormLabel>
+              <Box component="input" type="text" placeholder="e.g. Paradise on Earth"
+                name="tagline" value={formik.values.tagline}
+                onChange={formik.handleChange} onBlur={formik.handleBlur}
+                sx={{ ...inputSx, borderColor: fe('tagline') ? '#ef4444' : 'divider' }} />
+              {fe('tagline') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('tagline')}</Box>}
+            </Box>
+            <Box>
+              <FormLabel>Description</FormLabel>
+              <Box component="textarea" rows={3} placeholder="Describe the destination experience..."
+                name="description" value={formik.values.description}
+                onChange={formik.handleChange} onBlur={formik.handleBlur}
+                sx={{ ...inputSx, resize: 'vertical', fontFamily: 'inherit', borderColor: fe('description') ? '#ef4444' : 'divider' }} />
+              {fe('description') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('description')}</Box>}
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+              <Box>
+                <FormLabel>Category</FormLabel>
+                <Select size="small" fullWidth
+                  name="category" value={formik.values.category}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  sx={{ borderRadius: 2, fontSize: 14 }}
+                >
+                  {['Heritage', 'Nature', 'Beach', 'Culture', 'Wildlife'].map(c => (
+                    <MenuItem key={c} value={c} sx={{ fontSize: 13 }}>{c}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+              <Box>
                 <FormLabel>Price ($)</FormLabel>
-                <Box component="input" type="number" required placeholder="1200" value={formData.price} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, price: e.target.value })} sx={inputSx} />
+                <Box component="input" type="number" placeholder="1200"
+                  name="price" value={formik.values.price}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  sx={{ ...inputSx, borderColor: fe('price') ? '#ef4444' : 'divider' }} />
+                {fe('price') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('price')}</Box>}
               </Box>
               <Box>
                 <FormLabel>Rating</FormLabel>
-                <DestinationRating value={Number(formData.rating)} onChange={(val) => setFormData({ ...formData, rating: val.toString() })} />
+                <DestinationRating value={formik.values.rating} onChange={(val) => formik.setFieldValue('rating', val)} />
               </Box>
             </Box>
             <Box>
-              <FormLabel>Image URL</FormLabel>
-              <Box component="input" type="text" value={formData.image} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, image: e.target.value })} placeholder="https://images.unsplash.com/..." sx={inputSx} />
+              <FormLabel>Main Image URL</FormLabel>
+              <Box component="input" type="text" placeholder="https://images.unsplash.com/..."
+                name="image" value={formik.values.image}
+                onChange={formik.handleChange} onBlur={formik.handleBlur}
+                sx={{ ...inputSx, borderColor: fe('image') ? '#ef4444' : 'divider' }} />
+              {fe('image') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('image')}</Box>}
+            </Box>
+            <Box>
+              <FormLabel>Gallery Images (up to 5 URLs)</FormLabel>
+              <Box sx={{ display: 'grid', gap: 1.5 }}>
+                {([0, 1, 2, 3, 4] as const).map((i) => {
+                  const key = `gallery${i}` as keyof typeof formik.values;
+                  return (
+                    <Box key={i}>
+                      <Box component="input" type="text" placeholder={`Gallery image ${i + 1} URL`}
+                        name={key} value={formik.values[key]}
+                        onChange={formik.handleChange} onBlur={formik.handleBlur}
+                        sx={{ ...inputSx, borderColor: fe(key) ? '#ef4444' : 'divider' }} />
+                      {fe(key) && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe(key)}</Box>}
+                    </Box>
+                  );
+                })}
+              </Box>
             </Box>
           </Box>
         </DialogContent>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useParams, useNavigate} from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Typography, TextField, Grid, Divider, Alert, Paper, Container } from '@mui/material';
@@ -7,23 +7,30 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
 import LuggageIcon from '@mui/icons-material/Luggage';
-import { destinations } from '../components/Destinations';
 import type { Destination, UserBooking } from '../types';
 import type { RootState, AppDispatch } from '../store/Store';
+import { fetchDestinations } from '../store/slices/destinationsSlice';
 import { addBooking } from '../store/slices/bookingsSlice';
 import type { Booking } from '../store/slices/bookingsSlice';
 import Button from '../components/Button';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { useState } from 'react';
 
 function Book() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
+  const { items: destinations, status: destStatus } = useSelector((state: RootState) => state.destinations);
   const dest: Destination | undefined = destinations.find(d => d.id === id);
   const [submitted, setSubmitted] = useState(false);
   const [flyPos, setFlyPos] = useState<{ x: number; y: number; tx: number; ty: number } | null>(null);
   const submitBtnRef = useRef<HTMLDivElement>(null);
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', checkIn: '', checkOut: '', guests: '2', notes: '' });
+
+  useEffect(() => {
+    if (destStatus === 'idle' && destinations.length === 0) dispatch(fetchDestinations());
+  }, [dispatch, destStatus, destinations.length]);
 
   useEffect(() => {
     if (!flyPos) return;
@@ -34,76 +41,120 @@ function Book() {
     }
   }, [flyPos]);
 
+  const today = new Date().toISOString().split('T')[0];
+
+  const bookingSchema = Yup.object({
+    firstName: Yup.string()
+      .matches(/^[a-zA-Z\s]+$/, 'First name must contain only letters.')
+      .test('not-spaces-only', 'First name must contain at least one letter.', val => !!val && /[a-zA-Z]/.test(val))
+      .max(50, 'First name must not exceed 50 characters.')
+      .required('First name is required.'),
+    lastName: Yup.string()
+      .matches(/^[a-zA-Z\s]+$/, 'Last name must contain only letters.')
+      .test('not-spaces-only', 'Last name must contain at least one letter.', val => !!val && /[a-zA-Z]/.test(val))
+      .max(50, 'Last name must not exceed 50 characters.')
+      .required('Last name is required.'),
+    email: Yup.string()
+      .email('Please enter a valid email address.')
+      .required('Email is required.'),
+    phone: Yup.string()
+      .matches(/^\+?[0-9\s\-()]{7,15}$/, 'Please enter a valid phone number.')
+      .required('Phone number is required.'),
+    checkIn: Yup.string()
+      .required('Check-in date is required.')
+      .test('not-past', 'Check-in date cannot be in the past.', val => !!val && val >= today),
+    checkOut: Yup.string()
+      .required('Check-out date is required.')
+      .test('after-checkin', 'Check-out must be after check-in.', function (val) {
+        return !!val && !!this.parent.checkIn && val > this.parent.checkIn;
+      }),
+    guests: Yup.number()
+      .min(1, 'At least 1 guest is required.')
+      .max(20, 'Maximum 20 guests allowed.')
+      .required('Number of guests is required.'),
+    notes: Yup.string().max(500, 'Notes must not exceed 500 characters.'),
+  });
+
+  const formik = useFormik({
+    initialValues: { firstName: '', lastName: '', email: '', phone: '', checkIn: '', checkOut: '', guests: 2, notes: '' },
+    validationSchema: bookingSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: (values) => {
+      const bookingId = `BK-${Date.now()}`;
+
+      if (user && dest) {
+        const userBooking: UserBooking = {
+          id: bookingId,
+          destinationId: dest.id,
+          destinationName: dest.name,
+          destinationImage: dest.image,
+          destinationCategory: dest.category,
+          checkIn: values.checkIn,
+          checkOut: values.checkOut,
+          guests: values.guests,
+          total: 1250,
+          status: 'Pending',
+          bookedAt: new Date().toISOString(),
+        };
+        const key = `bookings_${user.email}`;
+        const existing: UserBooking[] = JSON.parse(localStorage.getItem(key) || '[]');
+        existing.unshift(userBooking);
+        localStorage.setItem(key, JSON.stringify(existing));
+      }
+
+      if (dest) {
+        const adminBooking: Booking = {
+          id: bookingId,
+          user: user ? user.name : `${values.firstName} ${values.lastName}`,
+          destination: dest.name,
+          destinationName: dest.name,
+          destinationImage: dest.image,
+          location: dest.category,
+          checkIn: values.checkIn,
+          checkOut: values.checkOut,
+          guests: values.guests,
+          date: values.checkIn,
+          status: 'Pending',
+          price: 1250,
+        };
+        dispatch(addBooking(adminBooking));
+      }
+
+      const navIcon = document.getElementById('nav-bookings-icon');
+      const btnEl = submitBtnRef.current;
+      if (navIcon && btnEl) {
+        const btnRect = btnEl.getBoundingClientRect();
+        const navRect = navIcon.getBoundingClientRect();
+        const startX = btnRect.left + btnRect.width / 2;
+        const startY = btnRect.top + btnRect.height / 2;
+        const endX = navRect.left + navRect.width / 2;
+        const endY = navRect.top + navRect.height / 2;
+        setFlyPos({ x: startX - 20, y: startY - 20, tx: endX - startX, ty: endY - startY });
+        setTimeout(() => {
+          setFlyPos(null);
+          setSubmitted(true);
+          window.dispatchEvent(new CustomEvent('bookingUpdated'));
+        }, 850);
+      } else {
+        setSubmitted(true);
+        window.dispatchEvent(new CustomEvent('bookingUpdated'));
+      }
+    },
+  });
+
+  if (destStatus === 'loading' || destinations.length === 0) return (
+    <Box sx={{ pt: 16, textAlign: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Typography variant="h6" color="text.secondary">Loading...</Typography>
+    </Box>
+  );
+
   if (!dest) return (
     <Box sx={{ pt: 16, textAlign: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Typography variant="h5" color="text.secondary">Destination not found.</Typography>
       <Button onClick={() => navigate('/destinations')} sx={{ mt: 2, color: '#fb5b52' }}>← Back to Destinations</Button>
     </Box>
   );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const bookingId = `BK-${Date.now()}`;
-
-    if (user) {
-    
-      const userBooking: UserBooking = {
-        id: bookingId,
-        destinationId: dest.id,
-        destinationName: dest.name,
-        destinationImage: dest.image,
-        destinationCategory: dest.category,
-        checkIn: form.checkIn,
-        checkOut: form.checkOut,
-        guests: Number(form.guests),
-        total: 1250,
-        status: 'Pending',
-        bookedAt: new Date().toISOString(),
-      };
-      const key = `bookings_${user.email}`;
-      const existing: UserBooking[] = JSON.parse(localStorage.getItem(key) || '[]');
-      existing.unshift(userBooking);
-      localStorage.setItem(key, JSON.stringify(existing));
-    }
-
-   
-    const adminBooking: Booking = {
-      id: bookingId,
-      user: user ? user.name : `${form.firstName} ${form.lastName}`,
-      destination: dest.name,
-      destinationName: dest.name,
-      destinationImage: dest.image,
-      location: dest.category,
-      checkIn: form.checkIn,
-      checkOut: form.checkOut,
-      guests: Number(form.guests),
-      date: form.checkIn,
-      status: 'Pending',
-      price: 1250,
-    };
-    dispatch(addBooking(adminBooking));
-
-  
-    const navIcon = document.getElementById('nav-bookings-icon');
-    const btnEl = submitBtnRef.current;
-    if (navIcon && btnEl) {
-      const btnRect = btnEl.getBoundingClientRect();
-      const navRect = navIcon.getBoundingClientRect();
-      const startX = btnRect.left + btnRect.width / 2;
-      const startY = btnRect.top + btnRect.height / 2;
-      const endX = navRect.left + navRect.width / 2;
-      const endY = navRect.top + navRect.height / 2;
-      setFlyPos({ x: startX - 20, y: startY - 20, tx: endX - startX, ty: endY - startY });
-      setTimeout(() => {
-        setFlyPos(null);
-        setSubmitted(true);
-        window.dispatchEvent(new CustomEvent('bookingUpdated'));
-      }, 850);
-    } else {
-      setSubmitted(true);
-      window.dispatchEvent(new CustomEvent('bookingUpdated'));
-    }
-  };
 
   if (submitted) {
     return (
@@ -206,69 +257,117 @@ function Book() {
               backdropFilter: 'blur(16px)', border: '1px solid', borderColor: 'divider',
               boxShadow: '0 8px 32px rgba(0,0,0,0.05)'
             }}>
-              <form onSubmit={handleSubmit}>
-              
-             
+              <form onSubmit={formik.handleSubmit}>
+
               <Box mb={6}>
                 <Typography variant="h5" fontWeight={800} mb={3}>Personal Details</Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="First Name" variant="outlined" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="First Name" variant="outlined"
+                      name="firstName" value={formik.values.firstName}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.firstName && !!formik.errors.firstName}
+                      helperText={formik.touched.firstName && formik.errors.firstName}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="Last Name" variant="outlined" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="Last Name" variant="outlined"
+                      name="lastName" value={formik.values.lastName}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.lastName && !!formik.errors.lastName}
+                      helperText={formik.touched.lastName && formik.errors.lastName}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="Email Address" type="email" variant="outlined" value={form.email} onChange={e => setForm({...form, email: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="Email Address" type="email" variant="outlined"
+                      name="email" value={formik.values.email}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.email && !!formik.errors.email}
+                      helperText={formik.touched.email && formik.errors.email}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField required fullWidth label="Phone Number" type="tel" variant="outlined" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="Phone Number" type="tel" variant="outlined"
+                      name="phone" value={formik.values.phone}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.phone && !!formik.errors.phone}
+                      helperText={formik.touched.phone && formik.errors.phone}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                 </Grid>
               </Box>
- 
+
                <Divider sx={{ mb: 6 }} />
- 
-               
+
                <Box mb={6}>
                 <Typography variant="h5" fontWeight={800} mb={3}>Trip Dates & Guests</Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={4}>
-                    <TextField required fullWidth label="Check-in Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined" value={form.checkIn} onChange={e => setForm({...form, checkIn: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="Check-in Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined"
+                      name="checkIn" value={formik.values.checkIn}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.checkIn && !!formik.errors.checkIn}
+                      helperText={formik.touched.checkIn && formik.errors.checkIn}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField required fullWidth label="Check-out Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined" value={form.checkOut} onChange={e => setForm({...form, checkOut: e.target.value})} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="Check-out Date" type="date" InputLabelProps={{ shrink: true }} variant="outlined"
+                      name="checkOut" value={formik.values.checkOut}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.checkOut && !!formik.errors.checkOut}
+                      helperText={formik.touched.checkOut && formik.errors.checkOut}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField required fullWidth label="Guests" type="number" InputProps={{ inputProps: { min: 1 } }} value={form.guests} onChange={e => setForm({...form, guests: e.target.value})} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }} />
+                    <TextField
+                      fullWidth label="Guests" type="number" variant="outlined"
+                      InputProps={{ inputProps: { min: 1, max: 20 } }}
+                      name="guests" value={formik.values.guests}
+                      onChange={formik.handleChange} onBlur={formik.handleBlur}
+                      error={formik.touched.guests && !!formik.errors.guests}
+                      helperText={formik.touched.guests && formik.errors.guests}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    />
                   </Grid>
                 </Grid>
               </Box>
 
               <Divider sx={{ mb: 6 }} />
 
-            
               <Box mb={6}>
                 <Typography variant="h5" fontWeight={800} mb={3}>Additional Requests</Typography>
-                <TextField 
-                  fullWidth 
-                  label="Special Requirements (Optional)" 
-                  multiline rows={4} variant="outlined" 
+                <TextField
+                  fullWidth label="Special Requirements (Optional)"
+                  multiline rows={4} variant="outlined"
                   placeholder="Tell us about special occasions, dietary restrictions, etc."
-                  value={form.notes}
-                  onChange={e => setForm({...form, notes: e.target.value})}
+                  name="notes" value={formik.values.notes}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
+                  error={formik.touched.notes && !!formik.errors.notes}
+                  helperText={formik.touched.notes && formik.errors.notes}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                 />
               </Box>
-              
+
               <Divider sx={{ mb: 6 }} />
 
-              <Alert 
-                severity="info" 
+              <Alert
+                severity="info"
                 icon={<CheckCircleOutlineIcon fontSize="inherit" />}
-                sx={{ 
-                  mb: 5, borderRadius: 3, p: 2, 
-                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(251, 91, 82, 0.05)' : 'rgba(251, 91, 82, 0.05)', 
+                sx={{
+                  mb: 5, borderRadius: 3, p: 2,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(251, 91, 82, 0.05)' : 'rgba(251, 91, 82, 0.05)',
                   color: 'text.primary', border: '1px solid rgba(251, 91, 82, 0.3)'
                 }}
               >
@@ -278,19 +377,19 @@ function Book() {
               </Alert>
 
               <div ref={submitBtnRef}>
-              <Button
-                type="submit"
-                variant="contained"
-                size="large"
-                fullWidth
-                sx={{ 
-                  py: 2, fontSize: '1.2rem', fontWeight: 800, bgcolor: '#fb5b52', 
-                  boxShadow: 'none', borderRadius: 2,
-                  '&:hover': { bgcolor: '#e04a42' } 
-                }}
-              >
-                Request Booking
-              </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  sx={{
+                    py: 2, fontSize: '1.2rem', fontWeight: 800, bgcolor: '#fb5b52',
+                    boxShadow: 'none', borderRadius: 2,
+                    '&:hover': { bgcolor: '#e04a42' }
+                  }}
+                >
+                  Request Booking
+                </Button>
               </div>
 
             </form>
