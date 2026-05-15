@@ -3,6 +3,7 @@ import emailjs from '@emailjs/browser'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../store/Store'
 import { addContactMessage } from '../store/slices/messagesSlice'
+import { fetchDestinations } from '../store/slices/destinationsSlice'
 import { Box, Container, Typography, Grid, Alert, TextField, MenuItem, Select, FormControl, InputLabel, FormHelperText } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import PhoneIcon from '@mui/icons-material/Phone'
@@ -21,15 +22,16 @@ import { useState } from 'react'
 function Contact() {
   const dispatch = useDispatch<AppDispatch>()
   const destinations = useSelector((state: RootState) => state.destinations.items)
+  const user = useSelector((state: RootState) => state.auth.user)
 
   const [sent, setSent] = useState(false)
   const [serverError, setServerError] = useState('')
 
+  const destStatus = useSelector((state: RootState) => state.destinations.status)
+
   useEffect(() => {
-    if (destinations.length === 0) {
-      import('../data/db.json').then(() => {})
-    }
-  }, [destinations.length])
+    if (destStatus === 'idle' && destinations.length === 0) dispatch(fetchDestinations())
+  }, [dispatch, destStatus, destinations.length])
 
   const contactSchema = Yup.object({
     name: Yup.string()
@@ -46,13 +48,13 @@ function Contact() {
     destination: Yup.string(),
     message: Yup.string()
       .trim()
-      .min(10, 'Message must be at least 10 characters.')
+      .min(2, 'Message must be at least 2 characters.')
       .max(1000, 'Message must not exceed 1000 characters.')
       .required('Message is required.'),
   })
 
   const formik = useFormik({
-    initialValues: { name: '', email: '', phone: '', destination: '', message: '' },
+    initialValues: { name: user?.name ?? '', email: user?.email ?? '', phone: '', destination: '', message: '' },
     validationSchema: contactSchema,
     validateOnBlur: true,
     validateOnChange: true,

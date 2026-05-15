@@ -41,14 +41,21 @@ function DestinationsPage() {
   const [search, setSearch] = useState('')
   const [minRating, setMinRating] = useState(0)
   const [sortBy, setSortBy] = useState('rating_desc')
-  const [priceRange, setPriceRange] = useState<number[]>([0, maxPrice])
+  const [priceRange, setPriceRange] = useState<number[]>([0, 5000])
+
+  
+  useEffect(() => {
+    if (destinations.length > 0) {
+      setPriceRange([0, maxPrice])
+    }
+  }, [maxPrice])
 
   const filtered = useMemo(() => {
     return destinations
       .filter(d => category === 'All' || d.category === category)
-      .filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.tagline.toLowerCase().includes(search.toLowerCase()))
+      .filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || (d.tagline ?? '').toLowerCase().includes(search.toLowerCase()))
       .filter(d => d.rating >= minRating)
-      .filter(d => (d.price ?? 0) >= priceRange[0] && (d.price ?? maxPrice) <= priceRange[1])
+      .filter(d => (d.price ?? 0) >= priceRange[0] && (d.price ?? 0) <= priceRange[1])
       .sort((a, b) => {
         if (sortBy === 'rating_desc') return b.rating - a.rating
         if (sortBy === 'rating_asc') return a.rating - b.rating

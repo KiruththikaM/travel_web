@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store/Store';
-import { sendAdminReply, markAsRead } from '../../store/slices/messagesSlice';
+import { sendAdminReply, markAsRead, deleteConversation } from '../../store/slices/messagesSlice';
 import AdminLayout from '../components/AdminLayout';
-import { Box } from '@mui/material';
+import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Button as MuiButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import type { Message } from '../../types';
 
 const AVATAR_COLORS = ['#fb5b52', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b'];
@@ -22,6 +23,7 @@ export default function AdminMessages() {
   const [input, setInput] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -162,7 +164,7 @@ export default function AdminMessages() {
         {active ? (
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
-            
+           
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: AVATAR_COLORS[conversations.findIndex(c => c.id === activeId) % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>
@@ -175,16 +177,15 @@ export default function AdminMessages() {
                   </Box>
                 </Box>
               </Box>
-            </Box>
-
-           
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 1.25, bgcolor: 'rgba(251,91,82,0.06)', borderBottom: '1px solid rgba(251,91,82,0.15)' }}>
-              <Box sx={{ fontSize: 12, color: 'text.secondary' }}>
-                <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>Inquiry: </Box>
-                <Box component="span" sx={{ color: '#fb5b52', fontWeight: 600 }}>{active.tour}</Box>
-              </Box>
-              <Box component="button" sx={{ fontSize: 11, fontWeight: 700, color: '#fb5b52', border: 'none', bgcolor: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap', ml: 2, '&:hover': { color: '#e04840' } }}>
-                VIEW TOUR DETAILS ›
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ fontSize: 12, color: '#fb5b52', fontWeight: 600 }}>{active.tour}</Box>
+                <Box
+                  component="button"
+                  onClick={() => setDeleteTarget(activeId)}
+                  sx={{ p: 0.75, borderRadius: 1.5, border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', bgcolor: 'rgba(239,68,68,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', '&:hover': { bgcolor: '#ef4444', color: '#fff' }, transition: 'all 0.15s' }}
+                >
+                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                </Box>
               </Box>
             </Box>
 
@@ -253,6 +254,30 @@ export default function AdminMessages() {
           </Box>
         )}
       </Box>
+
+      
+      <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} PaperProps={{ sx: { borderRadius: 4, p: 1, maxWidth: 380 } }}>
+        <DialogTitle sx={{ fontWeight: 900, color: 'text.primary' }}>Delete Conversation?</DialogTitle>
+        <DialogContent>
+          <Box sx={{ color: 'text.secondary', fontSize: 14 }}>This will permanently remove the conversation and all its messages. This cannot be undone.</Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <MuiButton onClick={() => setDeleteTarget(null)} sx={{ color: 'text.secondary', fontWeight: 700 }}>Cancel</MuiButton>
+          <MuiButton
+            variant="contained" color="error"
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3 }}
+            onClick={() => {
+              if (deleteTarget !== null) {
+                dispatch(deleteConversation(deleteTarget));
+                setActiveId(null);
+                setDeleteTarget(null);
+              }
+            }}
+          >
+            Delete
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
     </AdminLayout>
   );
 }

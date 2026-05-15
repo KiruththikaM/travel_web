@@ -17,6 +17,7 @@ import { Badge } from '@mui/material'
 import Login from "../pages/Login"
 import { useThemeContext } from '../context/ThemeContext'
 import type { NavLink, ToastSeverity, ToastDetail } from '../types'
+import { loadUserInbox } from '../store/slices/messagesSlice'
 
 
 const links: NavLink[] = [
@@ -48,10 +49,26 @@ function Navbar() {
 
   const [bookingCount, setBookingCount] = useState(getBookingCount)
 
+  const getUnreadMsgCount = () => user
+    ? loadUserInbox(user.email).filter(c => c.unread).length
+    : 0
+
+  const [unreadMsgCount, setUnreadMsgCount] = useState(getUnreadMsgCount)
+
   useEffect(() => {
     const handleUpdate = () => setBookingCount(getBookingCount())
     window.addEventListener('bookingUpdated', handleUpdate)
     return () => window.removeEventListener('bookingUpdated', handleUpdate)
+  }, [user])
+
+  useEffect(() => {
+    const handleInboxUpdate = () => setUnreadMsgCount(getUnreadMsgCount())
+    window.addEventListener('userInboxUpdated', handleInboxUpdate)
+    window.addEventListener('storage', handleInboxUpdate)
+    return () => {
+      window.removeEventListener('userInboxUpdated', handleInboxUpdate)
+      window.removeEventListener('storage', handleInboxUpdate)
+    }
   }, [user])
 
   useEffect(() => {
@@ -164,10 +181,10 @@ function Navbar() {
                     </Box>
                   </Tooltip>
                 )}
-                <Tooltip title="My Bookings">
+                <Tooltip title="My Profile">
                   <IconButton id="nav-bookings-icon" onClick={() => navigate('/profile')} sx={{ color: 'text.primary' }}>
-                    <Badge badgeContent={bookingCount} color="error" max={9}>
-                      <LuggageIcon />
+                    <Badge badgeContent={bookingCount + unreadMsgCount} color="error" max={9}>
+                      <PersonIcon />
                     </Badge>
                   </IconButton>
                 </Tooltip>

@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useSelector } from 'react-redux'
-import { Navigate, Link } from 'react-router-dom'
+import { Navigate, Link, useLocation } from 'react-router-dom'
 import type { RootState } from '../store/Store'
 import type { UserBooking } from '../types'
+import type { Conversation, Message } from '../types'
 import {
   Box, Container, Typography, Avatar, Chip, Divider, Grid, Paper,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab
 } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff'
@@ -13,7 +14,9 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import PeopleIcon from '@mui/icons-material/People'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined'
+import SendIcon from '@mui/icons-material/Send'
 import Button from '../components/Button'
+import { loadUserInbox, saveUserInbox } from '../store/slices/messagesSlice'
 
 const statusColors: Record<string, { bg: string; color: string; border: string }> = {
   Pending:   { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', border: 'rgba(245,158,11,0.3)' },
@@ -23,14 +26,94 @@ const statusColors: Record<string, { bg: string; color: string; border: string }
 
 function Profile() {
   const user = useSelector((state: RootState) => state.auth.user)
+  const location = useLocation()
 
   if (!user) return <Navigate to="/" replace />
+
+  const initialTab = new URLSearchParams(location.search).get('tab') === 'messages' ? 1 : 0
+  const [activeTab, setActiveTab] = useState(initialTab)
 
   const [bookings, setBookings] = useState<UserBooking[]>(() => {
     const key = `bookings_${user.email}`
     return JSON.parse(localStorage.getItem(key) || '[]')
   })
   const [cancelTarget, setCancelTarget] = useState<UserBooking | null>(null)
+
+
+  const [inbox, setInbox] = useState<Conversation[]>(() => loadUserInbox(user.email))
+  const [activeConvoId, setActiveConvoId] = useState<number | null>(() => {
+    const convos = loadUserInbox(user.email)
+    return convos.length > 0 ? convos[0].id : null
+  })
+  const [replyInput, setReplyInput] = useState('')
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const updated = loadUserInbox(user!.email)
+      setInbox(updated)
+    }
+    
+    window.addEventListener('userInboxUpdated', handleUpdate)
+   
+    window.addEventListener('storage', handleUpdate)
+   
+    const poll = setInterval(handleUpdate, 5000)
+    return () => {
+      window.removeEventListener('userInboxUpdated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+      clearInterval(poll)
+    }
+  }, [user])
+
+  const activeConvo = inbox.find(c => c.id === activeConvoId)
+
+  const handleOpenConvo = (id: number) => {
+    setActiveConvoId(id)
+   
+    const updated = inbox.map(c => c.id === id ? { ...c, unread: false } : c)
+    setInbox(updated)
+    saveUserInbox(user!.email, updated)
+    window.dispatchEvent(new Event('userInboxUpdated'))
+  }
+
+  const handleUserReply = () => {
+    if (!replyInput.trim() || !activeConvoId || !user) return
+    const now = new Date()
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    const newMsg: Message = {
+      id: (activeConvo?.messages[activeConvo.messages.length - 1]?.id ?? 0) + 1,
+      from: 'user',
+      text: replyInput.trim(),
+      time: timeStr,
+      date: dateStr,
+    }
+    const updated = inbox.map(c =>
+      c.id === activeConvoId
+        ? { ...c, messages: [...c.messages, newMsg], lastMsg: newMsg.text, lastTime: 'just now' }
+        : c
+    )
+    setInbox(updated)
+    saveUserInbox(user.email, updated)
+
+   
+    try {
+      const adminRaw = localStorage.getItem('admin_messages')
+      if (adminRaw) {
+        const adminState = JSON.parse(adminRaw)
+        const adminConvo = adminState.conversations.find((c: Conversation) => c.id === activeConvoId)
+        if (adminConvo) {
+          adminConvo.messages.push(newMsg)
+          adminConvo.lastMsg = newMsg.text
+          adminConvo.lastTime = 'just now'
+          adminConvo.unread = true
+          localStorage.setItem('admin_messages', JSON.stringify(adminState))
+        }
+      }
+    } catch {}
+
+    setReplyInput('')
+  }
 
   const handleCancel = useCallback(() => {
     if (!cancelTarget || !user) return
@@ -149,7 +232,18 @@ function Profile() {
           </Grid>
         </Paper>
 
+        <Tabs
+          value={activeTab}
+          onChange={(_, v) => setActiveTab(v)}
+          sx={{ mb: 4, '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: 15 }, '& .Mui-selected': { color: '#fb5b52 !important' }, '& .MuiTabs-indicator': { bgcolor: '#fb5b52' } }}
+        >
+          <Tab label="Booking History" />
+          <Tab label={`Messages${inbox.filter(c => c.unread).length > 0 ? ` (${inbox.filter(c => c.unread).length})` : ''}`} />
+        </Tabs>
+
        
+        {activeTab === 0 && (
+          <>
         <Typography variant="h5" fontWeight={900} color="text.primary" mb={3}>
           Booking History
         </Typography>
@@ -285,6 +379,96 @@ function Profile() {
                 </Box>
               </Paper>
             ))}
+          </Box>
+        )}
+          </>
+        )}
+
+      
+        {activeTab === 1 && (
+          <Box sx={{
+            display: 'flex', borderRadius: 4, border: '1px solid', borderColor: 'divider',
+            overflow: 'hidden', minHeight: 480,
+            background: (theme: Theme) => theme.palette.mode === 'dark' ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.85)',
+          }}>
+            
+            <Box sx={{ width: 240, flexShrink: 0, borderRight: '1px solid', borderColor: 'divider', overflowY: 'auto' }}>
+              {inbox.length === 0 ? (
+                <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary', fontSize: 13 }}>
+                  No messages yet.<br />Messages from admin will appear here.
+                </Box>
+              ) : inbox.map(c => (
+                <Box
+                  key={c.id}
+                  onClick={() => handleOpenConvo(c.id)}
+                  sx={{
+                    px: 2, py: 1.5, cursor: 'pointer',
+                    borderBottom: '1px solid', borderColor: 'divider',
+                    borderLeft: activeConvoId === c.id ? '3px solid #fb5b52' : '3px solid transparent',
+                    bgcolor: activeConvoId === c.id ? 'rgba(251,91,82,0.06)' : 'transparent',
+                    '&:hover': { bgcolor: 'rgba(251,91,82,0.04)' },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ fontWeight: 700, fontSize: 13, color: 'text.primary' }}>Admin</Box>
+                    {c.unread && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#fb5b52' }} />}
+                  </Box>
+                  <Box sx={{ fontSize: 11, color: '#fb5b52', fontWeight: 600, mt: 0.25 }}>{c.tour}</Box>
+                  <Box sx={{ fontSize: 12, color: 'text.secondary', mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.lastMsg}</Box>
+                </Box>
+              ))}
+            </Box>
+
+            
+            {activeConvo ? (
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Typography fontWeight={900} fontSize={14} color="text.primary">Admin</Typography>
+                  <Typography fontSize={12} color="#fb5b52" fontWeight={600}>{activeConvo.tour}</Typography>
+                </Box>
+                <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {activeConvo.messages.map(msg => (
+                    <Box key={msg.id} sx={{ display: 'flex', justifyContent: msg.from === 'admin' ? 'flex-start' : 'flex-end', mb: 1 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: msg.from === 'admin' ? 'flex-start' : 'flex-end' }}>
+                        <Box sx={{
+                          px: 2, py: 1, maxWidth: 280, wordBreak: 'break-word', fontSize: 14,
+                          borderRadius: msg.from === 'admin' ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                          bgcolor: msg.from === 'admin' ? 'action.selected' : '#fb5b52',
+                          color: msg.from === 'admin' ? 'text.primary' : '#fff',
+                        }}>
+                          {msg.text}
+                        </Box>
+                        <Box sx={{ fontSize: 10, color: 'text.disabled', mt: 0.5, px: 0.5 }}>{msg.time}</Box>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+                <Box sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                  <Box sx={{ display: 'flex', gap: 1, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', borderRadius: 3, px: 2, py: 1 }}>
+                    <Box
+                      component="input"
+                      type="text"
+                      placeholder="Type a reply..."
+                      value={replyInput}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReplyInput(e.target.value)}
+                      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleUserReply() }}
+                      sx={{ flex: 1, bgcolor: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: 'text.primary', '&::placeholder': { color: 'text.disabled' } }}
+                    />
+                    <Box
+                      component="button"
+                      onClick={handleUserReply}
+                      sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: '#fb5b52', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, '&:hover': { bgcolor: '#e04840' } }}
+                    >
+                      <SendIcon sx={{ fontSize: 16 }} />
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.secondary', fontSize: 14 }}>
+                Select a conversation to read messages
+              </Box>
+            )}
           </Box>
         )}
       </Container>
