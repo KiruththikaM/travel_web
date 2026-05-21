@@ -6,11 +6,14 @@ import { fetchDestinations } from '../store/slices/destinationsSlice'
 import {
   Box, Container, Typography, Grid, Card, CardMedia, CardContent,
   CardActionArea, Chip, Rating, ToggleButtonGroup, ToggleButton,
-  InputAdornment, TextField, MenuItem, Select, FormControl, Slider
+ MenuItem, Select, FormControl, Slider
 } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
-import SearchIcon from '@mui/icons-material/Search'
+
 import TuneIcon from '@mui/icons-material/Tune'
+import Search from '../components/Search'
+
+
 
 const categories = ['All', 'Heritage', 'Nature', 'Beach', 'Culture', 'Wildlife']
 const ratingOptions = [
@@ -94,27 +97,9 @@ function DestinationsPage() {
       <Container maxWidth="lg" sx={{ py: 8 }}>
 
         
-        <TextField
-          fullWidth
-          placeholder="Search destinations..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.secondary' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            mb: 4,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 4,
-              bgcolor: (theme: Theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)',
-              backdropFilter: 'blur(8px)',
-            }
-          }}
-        />
+        <Search value={search} onChange={(e) => setSearch(e.target.value)} />
+
+
 
         <Box display="flex" justifyContent="center" mb={4}>
           <ToggleButtonGroup

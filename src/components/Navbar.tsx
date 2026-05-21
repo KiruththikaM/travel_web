@@ -25,6 +25,7 @@ const links: NavLink[] = [
   { to: '/destinations', label: 'Destinations' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
+  { to: '/blog', label: 'Blog'},
 ]
 
 function Navbar() {

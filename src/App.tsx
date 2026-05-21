@@ -16,6 +16,7 @@ import AdminSettings from './admin/pages/AdminSettings'
 import AdminCalendar from './admin/pages/AdminCalendar'
 import AdminMessages from './admin/pages/AdminMessages'
 import ProtectedRoute from './components/ProtectedRoute'
+import Blog from './pages/Blog'
 
 const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -36,6 +37,8 @@ function App() {
   return (
     <BrowserRouter>
       <LayoutWrapper>
+         
+
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/destinations" element={<DestinationsPage />} />
@@ -44,6 +47,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/book/:id" element={<Book />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/blog" element={<Blog/>} />
         
           
           <Route path="/admin" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
@@ -54,6 +58,8 @@ function App() {
           <Route path="/admin/calendar" element={<ProtectedRoute><AdminCalendar /></ProtectedRoute>} />
           <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
         </Routes>
+      
+        
       </LayoutWrapper>
     </BrowserRouter>
   )

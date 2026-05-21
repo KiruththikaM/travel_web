@@ -15,75 +15,89 @@ import TelegramIcon from '@mui/icons-material/Telegram'
 import LinkedInIcon from '@mui/icons-material/LinkedIn'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
-import { useFormik } from 'formik'
-import * as Yup from 'yup'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useState } from 'react'
+
+
+const contactSchema = z.object({
+  name: z.string()
+    .min(1, 'Name is required.')
+    .max(50, 'Name must not exceed 50 characters.')
+    .regex(/^[a-zA-Z\s]+$/, 'Name must contain only letters.')
+    .refine(val => /[a-zA-Z]/.test(val), 'Name must contain at least one letter.'),
+  email: z.string()
+    .min(1, 'Email is required.')
+    .email('Please enter a valid email address.'),
+  phone: z.string()
+    .regex(/^\+?[0-9\s\-()]{7,15}$/, 'Please enter a valid phone number.')
+    .or(z.literal(''))
+    .optional(),
+  destination: z.string().optional(),
+  message: z.string()
+    .min(1, 'Message is required.')
+    .min(10, 'Message must be at least 10 characters.')
+    .max(1000, 'Message must not exceed 1000 characters.')
+    .refine(val => val.trim().length > 0, 'Message cannot be blank.'),
+})
+
+type ContactFormData = z.infer<typeof contactSchema>
 
 function Contact() {
   const dispatch = useDispatch<AppDispatch>()
   const destinations = useSelector((state: RootState) => state.destinations.items)
   const user = useSelector((state: RootState) => state.auth.user)
+  const destStatus = useSelector((state: RootState) => state.destinations.status)
 
   const [sent, setSent] = useState(false)
   const [serverError, setServerError] = useState('')
-
-  const destStatus = useSelector((state: RootState) => state.destinations.status)
 
   useEffect(() => {
     if (destStatus === 'idle' && destinations.length === 0) dispatch(fetchDestinations())
   }, [dispatch, destStatus, destinations.length])
 
-  const contactSchema = Yup.object({
-    name: Yup.string()
-      .matches(/^[a-zA-Z\s]+$/, 'Name must contain only letters.')
-      .test('not-spaces-only', 'Name must contain at least one letter.', val => !!val && /[a-zA-Z]/.test(val))
-      .max(50, 'Name must not exceed 50 characters.')
-      .required('Name is required.'),
-    email: Yup.string()
-      .email('Please enter a valid email address.')
-      .required('Email is required.'),
-    phone: Yup.string()
-      .matches(/^\+?[0-9\s\-()]{7,15}$/, 'Please enter a valid phone number.')
-      .nullable(),
-    destination: Yup.string(),
-    message: Yup.string()
-      .trim()
-      .min(2, 'Message must be at least 2 characters.')
-      .max(1000, 'Message must not exceed 1000 characters.')
-      .required('Message is required.'),
-  })
-
-  const formik = useFormik({
-    initialValues: { name: user?.name ?? '', email: user?.email ?? '', phone: '', destination: '', message: '' },
-    validationSchema: contactSchema,
-    validateOnBlur: true,
-    validateOnChange: true,
-    onSubmit: (values, { resetForm }) => {
-      setServerError('')
-      dispatch(addContactMessage({
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        destination: values.destination,
-        message: values.message,
-      }))
-      emailjs.send('service_zlxwif9', 'template_doc6s9v', {
-        title: 'New Contact Message',
-        name: values.name,
-        email: values.email,
-        phone: values.phone || 'Not provided',
-        destination: values.destination || 'Not specified',
-        message: values.message,
-      }, 'UZdscZBUE52_q_Tjs').then(() => {
-        setSent(true)
-        resetForm()
-      }).catch((err) => {
-        console.error('EmailJS error:', err)
-        setSent(true)
-        resetForm()
-      })
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: user?.name ?? '',
+      email: user?.email ?? '',
+      phone: '',
+      destination: '',
+      message: '',
     },
   })
+
+  const onSubmit = (values: ContactFormData) => {
+    setServerError('')
+    dispatch(addContactMessage({
+      name: values.name,
+      email: values.email,
+      phone: values.phone ?? '',
+      destination: values.destination ?? '',
+      message: values.message,
+    }))
+    emailjs.send('service_zlxwif9', 'template_doc6s9v', {
+      title: 'New Contact Message',
+      name: values.name,
+      email: values.email,
+      phone: values.phone || 'Not provided',
+      destination: values.destination || 'Not specified',
+      message: values.message,
+    }, 'UZdscZBUE52_q_Tjs').then(() => {
+      setSent(true)
+      reset({ name: user?.name ?? '', email: user?.email ?? '', phone: '', destination: '', message: '' })
+    }).catch((err) => {
+      console.error('EmailJS error:', err)
+      setSent(true)
+      reset({ name: user?.name ?? '', email: user?.email ?? '', phone: '', destination: '', message: '' })
+    })
+  }
 
   return (
     <Box sx={{
@@ -263,76 +277,91 @@ function Contact() {
                 <Alert severity="error" sx={{ borderRadius: 2, mb: 3 }}>{serverError}</Alert>
               )}
 
-              <form onSubmit={formik.handleSubmit} className="flex flex-col gap-3">
+              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <TextField
-                    fullWidth size="small" label="Your Name"
-                    name="name" value={formik.values.name}
-                    onChange={formik.handleChange} onBlur={formik.handleBlur}
-                    error={formik.touched.name && !!formik.errors.name}
-                    helperText={formik.touched.name && formik.errors.name}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                  <Controller
+                    name="name"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth size="small" label="Your Name"
+                        error={!!errors.name}
+                        helperText={errors.name?.message}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                      />
+                    )}
                   />
-                  <TextField
-                    fullWidth size="small" label="Email Address" type="email"
-                    name="email" value={formik.values.email}
-                    onChange={formik.handleChange} onBlur={formik.handleBlur}
-                    error={formik.touched.email && !!formik.errors.email}
-                    helperText={formik.touched.email && formik.errors.email}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                  <Controller
+                    name="email"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth size="small" label="Email Address" type="email"
+                        error={!!errors.email}
+                        helperText={errors.email?.message}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                      />
+                    )}
                   />
                 </div>
 
-                <TextField
-                  fullWidth size="small" label="Contact Number (Optional)"
-                  name="phone" value={formik.values.phone}
-                  onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  error={formik.touched.phone && !!formik.errors.phone}
-                  helperText={formik.touched.phone && formik.errors.phone}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth size="small" label="Contact Number (Optional)"
+                      error={!!errors.phone}
+                      helperText={errors.phone?.message}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                    />
+                  )}
                 />
 
-                <FormControl
-                  fullWidth size="small"
-                  error={formik.touched.destination && !!formik.errors.destination}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
-                >
-                  <InputLabel>Select Destination (Optional)</InputLabel>
-                  <Select
-                    name="destination"
-                    value={formik.values.destination}
-                    label="Select Destination (Optional)"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  >
-                    <MenuItem value=""><em>None</em></MenuItem>
-                    {destinations.map(dest => (
-                      <MenuItem key={dest.id} value={dest.name}>{dest.name} — {dest.location}</MenuItem>
-                    ))}
-                  </Select>
-                  {formik.touched.destination && formik.errors.destination && (
-                    <FormHelperText>{formik.errors.destination}</FormHelperText>
+                <Controller
+                  name="destination"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth size="small" error={!!errors.destination}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}>
+                      <InputLabel>Select Destination (Optional)</InputLabel>
+                      <Select {...field} label="Select Destination (Optional)">
+                        <MenuItem value=""><em>None</em></MenuItem>
+                        {destinations.map(dest => (
+                          <MenuItem key={dest.id} value={dest.name}>{dest.name} — {dest.location}</MenuItem>
+                        ))}
+                      </Select>
+                      {errors.destination && <FormHelperText>{errors.destination.message}</FormHelperText>}
+                    </FormControl>
                   )}
-                </FormControl>
+                />
 
-                <TextField
-                  fullWidth size="small" label="Your Message" multiline rows={5}
-                  placeholder="Tell us how we can help..."
-                  name="message" value={formik.values.message}
-                  onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  error={formik.touched.message && !!formik.errors.message}
-                  helperText={formik.touched.message && formik.errors.message}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                <Controller
+                  name="message"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth size="small" label="Your Message" multiline rows={5}
+                      placeholder="Tell us how we can help..."
+                      error={!!errors.message}
+                      helperText={errors.message?.message}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                    />
+                  )}
                 />
 
                 <div>
                   <button
                     type="submit"
-                    disabled={formik.isSubmitting}
+                    disabled={isSubmitting}
                     className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-2.5 rounded text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {formik.isSubmitting ? 'SENDING...' : 'SUBMIT'}
+                    {isSubmitting ? 'SENDING...' : 'SUBMIT'}
                   </button>
                 </div>
               </form>

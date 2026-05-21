@@ -30,7 +30,7 @@ function Footer() {
 
           <Grid item xs={6} md={3}>
             <Typography fontWeight={700} color="#fff" mb={2}>Quick Links</Typography>
-            {['Home', 'Destinations', 'About', 'Contact'].map(l => (
+            {['Home', 'Destinations', 'About', 'Contact','Blog'].map(l => (
               <Box key={l} mb={1}>
                 <Link
                   to={l === 'Home' ? '/' : `/${l.toLowerCase()}`}
