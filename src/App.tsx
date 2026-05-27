@@ -16,12 +16,18 @@ import AdminSettings from './admin/pages/AdminSettings'
 import AdminCalendar from './admin/pages/AdminCalendar'
 import AdminMessages from './admin/pages/AdminMessages'
 import ProtectedRoute from './components/ProtectedRoute'
-import Blog from './pages/Blog'
+import { lazy, Suspense } from 'react'
+
+const Blog = lazy(() => import('./pages/Blog'))
+const BlogDetail = lazy(() => import('./pages/BlogDetail'))
+
+
 
 const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
 
+  
   return (
     <>
       {!isAdmin && <Navbar />}
@@ -36,9 +42,9 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <BrowserRouter>
-      <LayoutWrapper>
-         
+      
 
+        <LayoutWrapper>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/destinations" element={<DestinationsPage />} />
@@ -47,9 +53,18 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/book/:id" element={<Book />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/blog" element={<Blog/>} />
-        
-          
+
+          <Route path="/blog" element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <Blog/>
+            </Suspense>
+          } />
+          <Route path="/blog/:id" element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <BlogDetail/>
+            </Suspense>
+          } />
+            
           <Route path="/admin" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
           <Route path="/admin/destinations" element={<ProtectedRoute><ManageDestinations /></ProtectedRoute>} />
           <Route path="/admin/bookings" element={<ProtectedRoute><ManageBookings /></ProtectedRoute>} />
@@ -58,12 +73,12 @@ function App() {
           <Route path="/admin/calendar" element={<ProtectedRoute><AdminCalendar /></ProtectedRoute>} />
           <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
         </Routes>
-      
-        
-      </LayoutWrapper>
+       
+        </LayoutWrapper>
+       
+     
     </BrowserRouter>
   )
 }
 
 export default App
-
