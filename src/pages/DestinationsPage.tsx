@@ -12,6 +12,7 @@ import type { Theme } from '@mui/material/styles'
 
 import TuneIcon from '@mui/icons-material/Tune'
 import Search from '../components/Search'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 
 
@@ -95,9 +96,10 @@ function DestinationsPage() {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 8 }}>
-
-        
-        <Search value={search} onChange={(e) => setSearch(e.target.value)} />
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Destinations' }]} />
+        <Box sx={{ mt: 3 }}>
+          <Search value={search} onChange={(e) => setSearch(e.target.value)} />
+        </Box>
 
 
 

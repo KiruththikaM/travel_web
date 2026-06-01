@@ -16,6 +16,7 @@ import Button from '../components/Button';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useState } from 'react';
+import PageBreadcrumb from '../components/PageBreadcrumb';
 
 function Book() {
   const { id } = useParams();
@@ -237,10 +238,12 @@ function Book() {
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate(-1)}
-          sx={{ mb: 4, color: 'text.secondary', textTransform: 'none', fontWeight: 600, '&:hover': { color: '#fb5b52', bgcolor: 'transparent' } }}
+          sx={{ mb: 2, color: 'text.secondary', textTransform: 'none', fontWeight: 600, '&:hover': { color: '#fb5b52', bgcolor: 'transparent' } }}
         >
           Back to Details
         </Button>
+
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Destinations', href: '/destinations' }, { label: dest.name, href: `/destinations/${dest.id}` }, { label: 'Book' }]} />
 
         <Typography variant="h3" fontWeight={900} mb={5} color="text.primary" sx={{ fontSize: { xs: '2.2rem', md: '3.5rem' } }}>
           Confirm and pay

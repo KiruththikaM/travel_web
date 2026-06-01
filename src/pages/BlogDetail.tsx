@@ -3,6 +3,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import LocalOfferIcon from '@mui/icons-material/LocalOffer'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 const blogs = [
   {
@@ -90,6 +91,9 @@ function BlogDetail() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Blog', href: '/blog' }, { label: blog.title }]} />
+      </div>
 
      
       <div className="w-full h-[320px] sm:h-[440px] lg:h-[540px] overflow-hidden">

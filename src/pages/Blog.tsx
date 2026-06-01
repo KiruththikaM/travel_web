@@ -6,6 +6,7 @@ import { Chip } from '@mui/material'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import PersonIcon from '@mui/icons-material/Person'
 import usePagination from '../hooks/usePagination'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 const blogs = [
   {
@@ -80,6 +81,9 @@ function Blog() {
 
   return (
     <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 ">
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Blog' }]} />
+      </div>
       
       <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">

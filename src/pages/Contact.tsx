@@ -19,6 +19,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState } from 'react'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 
 const contactSchema = z.object({
@@ -142,7 +143,8 @@ function Contact() {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Grid container spacing={4} alignItems="flex-start">
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
+        <Grid container spacing={4} alignItems="flex-start" sx={{ mt: 1 }}>
 
          
           <Grid item xs={12} md={4}>

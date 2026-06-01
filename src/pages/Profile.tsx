@@ -17,6 +17,7 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined'
 import SendIcon from '@mui/icons-material/Send'
 import Button from '../components/Button'
 import { loadUserInbox, saveUserInbox } from '../store/slices/messagesSlice'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 const statusColors: Record<string, { bg: string; color: string; border: string }> = {
   Pending:   { bg: 'rgba(245,158,11,0.1)',  color: '#d97706', border: 'rgba(245,158,11,0.3)' },
@@ -181,7 +182,9 @@ function Profile() {
       </Box>
 
       <Container maxWidth="lg" sx={{ position: 'relative', mt: -8, pb: 12 }}>
-
+        <Box sx={{ mb: 3, mt: 10 }}>
+          <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Profile' }]} />
+        </Box>
 
         <Paper elevation={0} sx={{
           p: { xs: 3, md: 5 }, borderRadius: 6, mb: 6,

@@ -5,6 +5,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import GroupsIcon from '@mui/icons-material/Groups'
 import PlaceIcon from '@mui/icons-material/Place'
 import StarIcon from '@mui/icons-material/Star'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 const team = [
   { name: 'Ashan Perera', role: 'Founder & Lead Guide', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop' },
@@ -143,6 +144,7 @@ function About() {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 10 }}>
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About' }]} sx={{ mb: 4 }} />
 
         
         <Grid container spacing={{ xs: 6, md: 10 }} alignItems="center" mb={12}>

@@ -8,6 +8,7 @@ import { Box, Container, Typography, Chip, Grid, Divider } from '@mui/material'
 import Button from '../components/Button'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
+import PageBreadcrumb from '../components/PageBreadcrumb'
 
 
 
@@ -45,7 +46,7 @@ function DestinationDetail() {
   return (
     <Box sx={{ pt: { xs: '90px', md: '110px' }, pb: 12, minHeight: '100vh', bgcolor: 'background.default' }}>
       <Container maxWidth="lg">
-
+        <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Destinations', href: '/destinations' }, { label: dest.name }]} />
 
         <Button
           startIcon={<ArrowBackIcon />}
