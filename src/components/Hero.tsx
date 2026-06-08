@@ -60,8 +60,9 @@ function Hero() {
           <img
             key={s.id}
             src={s.image}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'
-              }`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? 'opacity-100' : 'opacity-0'
+            }`}
           />
         ))}
         <div className="absolute inset-0 bg-black/10 z-10" />
@@ -84,19 +85,19 @@ function Hero() {
           {slide.num}
         </div>
 
-        <div className="relative z-10 w-full max-w-lg pr-28 lg:pr-36">
+        <div key={currentSlide} className="relative z-10 w-full max-w-lg pr-28 lg:pr-36">
           <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-bold leading-tight mb-6">
-            <div className="text-[#fb5b52]">{slide.title1}</div>
-            <div className="text-transparent" style={{ WebkitTextStroke: "2px #fb5b52" }}>
+            <div className="text-[#fb5b52] hero-title1">{slide.title1}</div>
+            <div className="text-transparent hero-title2" style={{ WebkitTextStroke: "2px #fb5b52" }}>
               {slide.title2}
             </div>
           </h1>
 
-          <p className="text-gray-300 text-sm md:text-base mb-10">
+          <p className="text-gray-300 text-sm md:text-base mb-10 hero-desc">
             {slide.desc}
           </p>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 hero-buttons">
             <button
               onClick={() => navigate('/destinations')}
               className="bg-[#fb5b52] text-white px-8 py-3 font-semibold hover:bg-red-600 transition"

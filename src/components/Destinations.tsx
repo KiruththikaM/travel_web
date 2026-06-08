@@ -6,8 +6,15 @@ import { fetchDestinations } from '../store/slices/destinationsSlice'
 import { Card, CardMedia, CardContent, CardActionArea, Chip, Rating, Typography, Box, Container } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import Button from './Button'
-import type { Destination } from '../types'
+import { motion } from 'framer-motion'
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.6, delay: i * 0.1, ease: [0.4, 0, 0.2, 1] },
+  }),
+}
 
 const categoryColors: Record<string, 'success' | 'primary' | 'info' | 'warning' | 'secondary'> = {
   Heritage: 'warning',
@@ -35,21 +42,35 @@ function Destinations() {
           : 'linear-gradient(135deg, #fff5f5 0%, #fff1f0 100%)',
     }}>
       <Container maxWidth="lg">
-        <Box textAlign="center" mb={8}>
-          <Typography variant="overline" sx={{ color: '#fb5b52', fontWeight: 700, letterSpacing: 3 }}>
-            Explore
-          </Typography>
-          <Typography variant="h3" fontWeight={800} color="text.primary" mt={1} mb={2}>
-            Popular Destinations
-          </Typography>
-          <Typography color="text.secondary" maxWidth={480} mx="auto">
-            From ancient ruins to tropical beaches — Sri Lanka has it all.
-          </Typography>
-        </Box>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          <Box textAlign="center" mb={8}>
+            <Typography variant="overline" sx={{ color: '#fb5b52', fontWeight: 700, letterSpacing: 3 }}>
+              Explore
+            </Typography>
+            <Typography variant="h3" fontWeight={800} color="text.primary" mt={1} mb={2}>
+              Popular Destinations
+            </Typography>
+            <Typography color="text.secondary" maxWidth={480} mx="auto">
+              From ancient ruins to tropical beaches — Sri Lanka has it all.
+            </Typography>
+          </Box>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {destinations.map(dest => (
-            <div key={dest.id}>
+          {destinations.map((dest, i) => (
+            <motion.div
+              key={dest.id}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.15 }}
+              custom={i % 3}
+            >
               <Card
                 elevation={0}
                 sx={{
@@ -105,24 +126,22 @@ function Destinations() {
                   </CardContent>
                 </CardActionArea>
               </Card>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <Box textAlign="center" mt={6}>
-          <Button
-            component={Link}
-            to="/destinations"
-            variant="outlined"
-            size="large"
-            pill
-            sx={{
-              px: 5,
-            }}
-          >
-            View All Destinations
-          </Button>
-        </Box>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.5 }}
+        >
+          <Box textAlign="center" mt={6}>
+            <Button component={Link} to="/destinations" variant="outlined" size="large" pill sx={{ px: 5 }}>
+              View All Destinations
+            </Button>
+          </Box>
+        </motion.div>
       </Container>
     </Box>
   )

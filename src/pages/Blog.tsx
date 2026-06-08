@@ -7,6 +7,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import PersonIcon from '@mui/icons-material/Person'
 import usePagination from '../hooks/usePagination'
 import PageBreadcrumb from '../components/PageBreadcrumb'
+import { motion } from "motion/react"
+
 
 const blogs = [
   {
@@ -60,6 +62,15 @@ const categoryColors: Record<string, 'primary' | 'success' | 'warning' | 'error'
   ADVENTURE: 'error',
 }
 
+const ball = {
+    width: 100,
+    height: 100,
+    backgroundColor: "blue",
+    borderRadius: "50%",
+}
+
+
+
 function Blog() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
@@ -81,6 +92,7 @@ function Blog() {
 
   return (
     <div className="min-h-screen">
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 ">
         <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Blog' }]} />
       </div>
@@ -90,7 +102,9 @@ function Blog() {
           <div className="flex flex-col lg:flex-row items-center gap-10">
         
             <div className="flex-1 text-center lg:text-left">
-              <span className="inline-block text-xs font-bold tracking-widest text-blue-600 uppercase mb-3">
+              
+              <span  className="inline-block text-xs font-bold tracking-widest text-blue-600 uppercase mb-3">
+                
                 Our Blog
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight text-gray-900 dark:text-white">
@@ -100,19 +114,33 @@ function Blog() {
               <p className="mt-4 text-gray-500 dark:text-gray-400 text-base sm:text-lg max-w-xl mx-auto lg:mx-0">
                 Explore travel guides, tips, and inspiring stories to plan your next adventure.
               </p>
-              <div className="mt-6 max-w-md mx-auto lg:mx-0">
+              <div className="mt-6 max-w-md mx-auto lg:mx-0 ">
+
+                 <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                    transition={{
+                      duration: 1.2,
+                       scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 },
+                       }}
+                 style={ball}
+                 />
+
+
                 <Search value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
             </div>
 
             
             <div className="flex-1 flex justify-center items-end gap-4 relative">
+              
               <img
                 src="https://png.pngtree.com/png-vector/20230902/ourmid/pngtree-tourist-couple-standing-at-the-airport-with-passport-and-suitcase-3d-png-image_9240130.png"
                 alt="Travelers"
                 className="w-56 sm:w-72 lg:w-80 object-contain drop-shadow-xl"
               />
-              <img
+              
+              <img 
                 src="https://www.transparentpng.com/thumb/travel/RALK0S-travel-suitcase-airplane-photo-tour-clipart-photo.png"
                 alt="Travel gear"
                 className="w-28 sm:w-36 lg:w-44 object-contain drop-shadow-xl mb-4"
@@ -124,6 +152,7 @@ function Blog() {
 
      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
         <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
           {categories.map((cat) => (
             <button
@@ -140,9 +169,11 @@ function Blog() {
           ))}
         </div>
       </div>
+      
 
     
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        
         <div className="flex flex-col lg:flex-row gap-8">
 
         
@@ -242,7 +273,7 @@ function Blog() {
 
            
             <Card className="p-5">
-              <div className="font-bold text-lg mb-3 text-gray-800 dark:text-white">Search</div>
+              <div className="font-bold text-lg mb-3 text-gray-800 dark:text-white  ">Search</div>
               <Search value={search} onChange={(e) => setSearch(e.target.value)} />
             </Card>
 
@@ -288,7 +319,12 @@ function Blog() {
           </div>
         </div>
       </div>
+     
     </div>
+
+
+
+
   )
 }
 

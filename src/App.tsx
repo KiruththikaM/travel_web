@@ -15,6 +15,8 @@ import ManageUsers from './admin/pages/ManageUsers'
 import AdminSettings from './admin/pages/AdminSettings'
 import AdminCalendar from './admin/pages/AdminCalendar'
 import AdminMessages from './admin/pages/AdminMessages'
+import AdminAnalytics from './admin/pages/AdminAnalytics'
+import AdminTopTours from './admin/pages/AdminTopTours'
 import ProtectedRoute from './components/ProtectedRoute'
 import { lazy, Suspense } from 'react'
 
@@ -72,6 +74,8 @@ function App() {
           <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
           <Route path="/admin/calendar" element={<ProtectedRoute><AdminCalendar /></ProtectedRoute>} />
           <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
+          <Route path="/admin/top-tours" element={<ProtectedRoute><AdminTopTours /></ProtectedRoute>} />
         </Routes>
        
         </LayoutWrapper>
