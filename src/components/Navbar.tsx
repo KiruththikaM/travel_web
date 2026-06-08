@@ -180,7 +180,7 @@ function Navbar() {
                     <Box
                       onClick={() => navigate(isAdminRoute ? '/' : '/admin')}
                       sx={{
-                        display: 'flex', alignItems: 'center', gap: 0.8,
+                        display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.8,
                         px: 1.5, py: 0.6, borderRadius: '20px', cursor: 'pointer',
                         fontSize: '12px', fontWeight: 700, border: '1.5px solid', transition: 'all 0.25s',
                         borderColor: isAdminRoute ? '#10b981' : '#6366f1',
@@ -201,7 +201,7 @@ function Navbar() {
                     </Badge>
                   </IconButton>
                 </Tooltip>
-                <Button variant="outlined" color="error" size="small" pill onClick={handleLogout}>
+                <Button variant="outlined" color="error" size="small" pill onClick={handleLogout} sx={{ display: { xs: 'none', md: 'block' } }}>
                   Logout
                 </Button>
               </Box>
@@ -242,6 +242,45 @@ function Navbar() {
                 </ListItemButton>
               </ListItem>
             ))}
+            {user && (
+              <>
+                <ListItem disablePadding sx={{ display: { md: 'none' } }}>
+                  <ListItemButton
+                    onClick={() => {
+                      navigate('/profile')
+                      setOpen(false)
+                    }}
+                    sx={{ color: 'text.primary', fontWeight: 600 }}
+                  >
+                    <ListItemText primary="My Profile" />
+                  </ListItemButton>
+                </ListItem>
+                {isAdmin && (
+                  <ListItem disablePadding sx={{ display: { md: 'none' } }}>
+                    <ListItemButton
+                      onClick={() => {
+                        navigate(isAdminRoute ? '/' : '/admin')
+                        setOpen(false)
+                      }}
+                      sx={{ color: isAdminRoute ? '#10b981' : '#6366f1', fontWeight: 600 }}
+                    >
+                      <ListItemText primary={isAdminRoute ? 'Back to Website' : 'Admin Dashboard'} />
+                    </ListItemButton>
+                  </ListItem>
+                )}
+                <ListItem disablePadding sx={{ display: { md: 'none' } }}>
+                  <ListItemButton
+                    onClick={() => {
+                      handleLogout()
+                      setOpen(false)
+                    }}
+                    sx={{ color: 'error.main', fontWeight: 600 }}
+                  >
+                    <ListItemText primary="Logout" />
+                  </ListItemButton>
+                </ListItem>
+              </>
+            )}
           </List>
         </Box>
       </Drawer>
