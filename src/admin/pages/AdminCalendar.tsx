@@ -104,13 +104,13 @@ export default function AdminCalendar() {
         <Box sx={{ color: 'text.secondary', fontSize: 13, mt: 0.5 }}>Togo / Calendar</Box>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
+      <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start', flexDirection: { xs: 'column', lg: 'row' } }}>
 
        
         <Box sx={{ flex: 1, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
 
        
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' , flexDirection: { xs: 'column', sm: 'row',} }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ fontSize: 17, fontWeight: 900, color: 'text.primary' }}>{MONTHS[month]} {year}</Box>
               <Box component="button" onClick={prevMonth} sx={{ p: 0.5, borderRadius: 1.5, border: 'none', bgcolor: 'transparent', cursor: 'pointer', color: 'text.disabled', display: 'flex', '&:hover': { bgcolor: 'action.hover', color: 'text.primary' } }}>

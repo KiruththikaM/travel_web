@@ -260,7 +260,7 @@ const ManageDestinations = () => {
             {isEditMode ? 'Update the details of the travel destination.' : 'Fill in the details to create a new travel destination.'}
           </Box>
           <Box component="form" id="destination-form" onSubmit={formik.handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
               <Box>
                 <FormLabel>Package Name</FormLabel>
                 <Box component="input" type="text" placeholder="e.g. Tropical Maldives Getaway"
@@ -294,7 +294,7 @@ const ManageDestinations = () => {
                 sx={{ ...inputSx, resize: 'vertical', fontFamily: 'inherit', borderColor: fe('description') ? '#ef4444' : 'divider' }} />
               {fe('description') && <Box sx={{ color: '#ef4444', fontSize: 11, mt: 0.5 }}>{fe('description')}</Box>}
             </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
               <Box>
                 <FormLabel>Category</FormLabel>
                 <Select size="small" fullWidth

@@ -78,7 +78,7 @@ const ManageBookings = () => {
       </Box>
 
       
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(4,1fr)' }, gap: 2, mb: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr ', lg: 'repeat(4,1fr)' }, gap: 2, mb: 4 }}>
         {statCards.map(card => (
           <Box key={card.label} sx={{
             bgcolor: 'background.paper', borderRadius: 3,
